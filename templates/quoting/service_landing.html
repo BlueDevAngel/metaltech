@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ service.title }} | متال‌تک شادآباد{% endblock %}
+{% block meta_description %}{{ service.meta_description }}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "{{ service.title }}",
+  "provider": {
+    "@type": "IndustrialBusiness",
+    "name": "متال‌تک (MetalTech.ir)",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "تهران، شادآباد، بازار آهن",
+      "addressCountry": "IR"
+    }
+  },
+  "description": "{{ service.meta_description }}"
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-12 space-y-12">
+
+    <!-- بخش معرفی سرویس و آپلود سریع -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start border-b border-zinc-800 pb-12">
+        <div class="lg:col-span-7 space-y-4">
+            <div class="font-mono-tech text-xs text-amber-500">SERVICE SPECIFICATION // {{ service.code }}</div>
+            <h1 class="text-3xl font-black text-white">{{ service.h1 }}</h1>
+            <p class="text-sm text-zinc-400 leading-relaxed">{{ service.subtitle }}</p>
+
+            <!-- جدول استانداردها و ظرفیت‌های فنی این سرویس -->
+            <div class="border border-zinc-800 mt-6">
+                <div class="bg-zinc-900 px-4 py-2.5 border-b border-zinc-800 text-xs font-bold text-white flex justify-between">
+                    <span>پارامترهای فنی و محدودیت‌های اجرایی</span>
+                    <span class="font-mono-tech text-zinc-500">TOLERANCE TABLE</span>
+                </div>
+                <div class="divide-y divide-zinc-800 text-xs">
+                    {% for label, val in service.specs %}
+                    <div class="grid grid-cols-2 px-4 py-3 bg-zinc-950">
+                        <span class="text-zinc-400">{{ label }}</span>
+                        <span class="text-white font-mono-tech font-semibold">{{ val }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-5 bg-zinc-900 border border-zinc-800 p-6 space-y-5">
+            <h2 class="text-base font-bold text-white border-b border-zinc-800 pb-3">استعلام قیمت فوری {{ service.h1 }}</h2>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+                فایل نقشه خود را بارگذاری کنید تا سیستم به صورت خودکار بر اساس نرخ روز ورق بازار آهن شادآباد، پیش‌فاکتور رسمی صادر نماید.
+            </p>
+            <form method="post" action="{% url 'quoting:upload_dxf' %}" enctype="multipart/form-data" class="space-y-4">
+                {% csrf_token %}
+                <input type="file" name="dxf_file" accept=".dxf" required
+                       class="block w-full text-xs text-zinc-300 file:ml-3 file:py-2 file:px-3 file:border-0 file:bg-zinc-800 file:text-white bg-zinc-950 border border-zinc-700 p-1.5">
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 text-xs transition">
+                    آپلود فایل DXF و محاسبه آنی
+                </button>
+            </form>
+            <div class="pt-3 border-t border-zinc-800 text-center">
+                <a href="{% url 'quoting:workspace' %}#custom-rfq" class="text-xs text-zinc-300 hover:text-amber-500">
+                    ارسال نقشه PDF یا عکس قطعه برای مهندس دفتر ←
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- الزامات طراحی مهندسی (DFM Guidelines) -->
+    <div class="bg-zinc-900/50 border border-zinc-800 p-6 space-y-4">
+        <div class="font-mono-tech text-xs text-amber-500">DESIGN FOR MANUFACTURING (DFM) GUIDELINES</div>
+        <h2 class="text-lg font-bold text-white">نکات فنی طراحان پیش از ارسال فایل تولید</h2>
+        <ul class="space-y-2.5 text-xs text-zinc-300">
+            {% for note in service.technical_notes %}
+            <li class="flex items-start gap-2">
+                <span class="font-mono-tech text-amber-500 font-bold">0{{ forloop.counter }}.</span>
+                <span>{{ note }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</div>
+{% endblock %}

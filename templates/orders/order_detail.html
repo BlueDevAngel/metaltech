@@ -1,0 +1,96 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>رهگیری سفارش {{ order.order_number }} | MetalTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+    <style>body { font-family: 'Vazirmatn', sans-serif; }</style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen py-8 px-4">
+    <div class="max-w-5xl mx-auto space-y-6">
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500 text-emerald-200 text-sm">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- هدر سفارش و دکمه چاپ پیش‌فاکتور -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-wrap justify-between items-center gap-4">
+            <div>
+                <span class="text-xs text-slate-400">کد پیگیری اختصاصی شما:</span>
+                <h1 class="text-2xl font-black text-amber-400">{{ order.order_number }}</h1>
+                <p class="text-xs text-slate-300 mt-1">خریدار: {{ order.customer_name }} {% if order.company_name %}({{ order.company_name }}){% endif %}</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="{% url 'orders:invoice' order.id %}" target="_blank" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold">
+                    🖨️ مشاهده و چاپ پیش‌فاکتور رسمی (PDF)
+                </a>
+                {% if not order.is_paid %}
+                <a href="{% url 'orders:zarinpal_pay' order.id %}" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-5 py-2.5 rounded-xl text-sm font-bold">
+                    💳 پرداخت آنلاین زرین‌پال
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- نوار رهگیری ۵ مرحله‌ای خط تولید سوله شادآباد -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+            <h2 class="text-base font-bold text-white mb-6">وضعیت لحظه‌ای سفارش در خط تولید MetalTech:</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 text-center">
+                <div class="p-3 rounded-xl border {% if order.current_step_number >= 1 %}bg-emerald-500/10 border-emerald-500 text-emerald-300{% else %}bg-slate-950 border-slate-800 text-slate-500{% endif %}">
+                    <div class="text-lg font-black">مرحله ۱</div>
+                    <div class="text-xs mt-1">تایید نقشه و Nesting</div>
+                </div>
+                <div class="p-3 rounded-xl border {% if order.current_step_number >= 2 %}bg-emerald-500/10 border-emerald-500 text-emerald-300{% else %}bg-slate-950 border-slate-800 text-slate-500{% endif %}">
+                    <div class="text-lg font-black">مرحله ۲</div>
+                    <div class="text-xs mt-1">تامین ورق از سوله مرکزی</div>
+                </div>
+                <div class="p-3 rounded-xl border {% if order.current_step_number >= 3 %}bg-emerald-500/10 border-emerald-500 text-emerald-300{% else %}bg-slate-950 border-slate-800 text-slate-500{% endif %}">
+                    <div class="text-lg font-black">مرحله ۳</div>
+                    <div class="text-xs mt-1">برش لیزر و خم‌کاری CNC</div>
+                </div>
+                <div class="p-3 rounded-xl border {% if order.current_step_number >= 4 %}bg-emerald-500/10 border-emerald-500 text-emerald-300{% else %}bg-slate-950 border-slate-800 text-slate-500{% endif %}">
+                    <div class="text-lg font-black">مرحله ۴</div>
+                    <div class="text-xs mt-1">کنترل کیفیت (QC قطعه اول)</div>
+                </div>
+                <div class="p-3 rounded-xl border {% if order.current_step_number >= 5 %}bg-emerald-500/10 border-emerald-500 text-emerald-300{% else %}bg-slate-950 border-slate-800 text-slate-500{% endif %}">
+                    <div class="text-lg font-black">مرحله ۵</div>
+                    <div class="text-xs mt-1">بسته‌بندی و ارسال بار</div>
+                </div>
+            </div>
+
+            <!-- نمایش عکس کنترل کیفیت قطعه اول زیر کولیس (برگ برنده اعتمادسازی) -->
+            {% if order.qc_first_article_image %}
+            <div class="mt-6 bg-slate-950 border border-sky-500/40 rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-center">
+                <img src="{{ order.qc_first_article_image.url }}" class="w-48 h-36 object-cover rounded-lg border border-slate-700">
+                <div>
+                    <span class="bg-sky-500/20 text-sky-400 text-xs px-2.5 py-1 rounded font-bold">گزارش واحد کنترل کیفیت (QC)</span>
+                    <h3 class="text-white font-bold mt-2">تصویر بررسی ابعادی قطعه اول در سوله شادآباد</h3>
+                    <p class="text-xs text-slate-300 mt-1">{{ order.qc_engineer_note|default:"ابعاد برش و زوایای خم قطعه اول با کولیس دیجیتال مطابقت داده شد و مورد تایید مهندس ناظر است." }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- بخش بارگذاری فیش بانکی برای شرکت‌ها (در صورتی که هنوز پرداخت نشده) -->
+        {% if not order.is_paid %}
+        <div class="bg-slate-900 border border-amber-500/40 rounded-2xl p-6">
+            <h3 class="font-bold text-amber-400 mb-2">راهنمای واریز بانکی / پایا (مخصوص شرکت‌ها)</h3>
+            <p class="text-xs text-slate-300 mb-4">
+                در صورتی که واحد مالی شرکت شما مبلغ <strong>{{ order.payable_amount|intcomma }} تومان</strong> را طبق پیش‌فاکتور رسمی واریز نموده است، تصویر فیش را در کادر زیر بارگذاری کنید:
+            </p>
+            <form method="post" action="{% url 'orders:upload_receipt' order.id %}" enctype="multipart/form-data" class="flex flex-wrap gap-3 items-center">
+                {% csrf_token %}
+                <input type="text" name="payment_ref_id" placeholder="شماره پیگیری فیش / پایا" class="bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-sm">
+                <input type="file" name="receipt_file" required class="text-xs text-slate-300 bg-slate-950 border border-slate-700 rounded-xl p-1.5">
+                <button type="submit" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-5 py-2 rounded-xl text-sm">ثبت فیش واریزی</button>
+            </form>
+        </div>
+        {% endif %}
+
+    </div>
+</body>
+</html>

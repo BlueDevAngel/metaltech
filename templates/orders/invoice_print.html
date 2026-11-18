@@ -1,0 +1,82 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>پیش‌فاکتور رسمی {{ order.order_number }} - MetalTech.ir</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body class="bg-white text-slate-900 p-8 max-w-4xl mx-auto">
+    <div class="no-print mb-6 flex justify-between bg-slate-100 p-4 rounded-xl border">
+        <span class="text-sm font-bold">برای دانلود به صورت PDF یا چاپ، دکمه روبرو را بزنید:</span>
+        <button onclick="window.print()" class="bg-slate-900 text-white px-5 py-2 rounded-lg text-sm font-bold">🖨️ چاپ / ذخیره PDF</button>
+    </div>
+
+    <div class="border-2 border-slate-900 p-6 rounded-lg">
+        <div class="flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-4">
+            <div>
+                <h1 class="text-2xl font-black">سامانه تولید صنعتی متال‌تک (METALTECH.ir)</h1>
+                <p class="text-xs text-slate-600 mt-1">مرکز تخصصی برش لیزر، خم‌کاری CNC و ساخت قطعات فلزی | سوله مرکزی: بازار آهن شادآباد</p>
+            </div>
+            <div class="text-left text-xs space-y-1">
+                <div><strong>شماره پیش‌فاکتور:</strong> {{ order.order_number }}</div>
+                <div><strong>تاریخ صدور:</strong> {{ order.created_at|date:"Y/m/d" }}</div>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-300 p-3 rounded mb-4 text-xs grid grid-cols-2 gap-2">
+            <div><strong>خریدار / شرکت:</strong> {{ order.company_name|default:order.customer_name }}</div>
+            <div><strong>شناسه ملی / اقتصادی:</strong> {{ order.national_id|default:"-" }}</div>
+            <div><strong>نام رابط و تلفن:</strong> {{ order.customer_name }} ({{ order.customer_phone }})</div>
+            <div><strong>نشانی تحویل:</strong> {{ order.shipping_address }}</div>
+        </div>
+
+        <table class="w-full border-collapse border border-slate-900 text-xs text-center mb-4">
+            <thead class="bg-slate-200 font-bold">
+                <tr>
+                    <th class="border border-slate-900 p-2">ردیف</th>
+                    <th class="border border-slate-900 p-2">نام نقشه / قطعه</th>
+                    <th class="border border-slate-900 p-2">جنس و ضخامت ورق</th>
+                    <th class="border border-slate-900 p-2">ابعاد (mm)</th>
+                    <th class="border border-slate-900 p-2">تعداد خم</th>
+                    <th class="border border-slate-900 p-2">تعداد</th>
+                    <th class="border border-slate-900 p-2">قیمت واحد (تومان)</th>
+                    <th class="border border-slate-900 p-2">مبلغ کل (تومان)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td class="border border-slate-900 p-2">{{ forloop.counter }}</td>
+                    <td class="border border-slate-900 p-2 font-bold">{{ item.file_name }}</td>
+                    <td class="border border-slate-900 p-2">{{ item.material_title }}</td>
+                    <td class="border border-slate-900 p-2">{{ item.dimensions_str }}</td>
+                    <td class="border border-slate-900 p-2">{{ item.bend_count }}</td>
+                    <td class="border border-slate-900 p-2 font-bold">{{ item.quantity }}</td>
+                    <td class="border border-slate-900 p-2">{{ item.unit_price|intcomma }}</td>
+                    <td class="border border-slate-900 p-2 font-bold">{{ item.total_price|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="flex justify-between items-start text-xs pt-2">
+            <div class="space-y-1 text-slate-700">
+                <p><strong>شرایط و توضیحات:</strong></p>
+                <p>۱. اعتبار این پیش‌فاکتور به دلیل نوسانات قیمت ورق در بازار آهن ۲۴ ساعت می‌باشد.</p>
+                <p>۲. کلیه قطعات پس از تایید کنترل کیفیت (QC) در سوله مرکزی متال‌تک تحویل می‌گردند.</p>
+            </div>
+            <div class="w-64 border border-slate-900 rounded p-3 space-y-2 bg-slate-50">
+                <div class="flex justify-between"><span>جمع خالص:</span><strong>{{ order.subtotal_price|intcomma }} تومان</strong></div>
+                <div class="flex justify-between"><span>ارزش افزوده (۱۰٪):</span><strong>{{ order.tax_amount|intcomma }} تومان</strong></div>
+                <div class="flex justify-between border-t border-slate-400 pt-2 text-sm"><span>قابل پرداخت:</span><strong class="font-black">{{ order.payable_amount|intcomma }} تومان</strong></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+<!-- بخش اول: ترمینال مهندسی آپلود نقشه و مشخصات اجرایی (Hero Section) -->
+<section class="bg-cad-grid border-b border-zinc-800 py-12 lg:py-16">
+    <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- ستون راست: معرفی فنی و شاخص‌های کلیدی (۷ ستون) -->
+        <div class="lg:col-span-7 space-y-6">
+            <div class="inline-flex items-center gap-2 border border-zinc-800 bg-zinc-900 px-3 py-1 text-[11px] font-mono-tech text-amber-500">
+                <span>DIRECT SHEET SUPPLY + CNC LASER & BENDING</span>
+            </div>
+            
+            <h1 class="text-3xl sm:text-4xl font-black text-white leading-tight tracking-tight">
+                تولید صنعتی قطعات ورق‌کاری، برش لیزر و خمکاری CNC با قیمت‌گذاری لحظه‌ای
+            </h1>
+            
+            <p class="text-sm text-zinc-400 leading-relaxed max-w-2xl">
+                متال‌تک زنجیره تامین ورق از بازار آهن شادآباد، برش لیزر فایبر، خمکاری پرس برک، جوشکاری و کنترل کیفیت ابعادی را در یک پلتفرم مهندسی متمرکز کرده است. فایل نقشه خود را بارگذاری کنید تا طول مسیر برش، وزن ورق و پیش‌فاکتور رسمی به صورت خودکار محاسبه شود.
+            </p>
+
+            <!-- ماتریس اعداد فنی (بدون شعار تبلیغاتی) -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 border border-zinc-800 bg-zinc-950 divide-y sm:divide-y-0 sm:divide-x sm:divide-x-reverse divide-zinc-800">
+                <div class="p-4">
+                    <div class="text-[11px] text-zinc-500">تلرانس برش لیزر</div>
+                    <div class="text-lg font-bold text-white font-mono-tech mt-1" dir="ltr">±0.10 mm</div>
+                </div>
+                <div class="p-4">
+                    <div class="text-[11px] text-zinc-500">ظرفیت ضخامت ورق</div>
+                    <div class="text-lg font-bold text-white font-mono-tech mt-1" dir="ltr">0.5 - 25 mm</div>
+                </div>
+                <div class="p-4">
+                    <div class="text-[11px] text-zinc-500">طول کارگیر خم CNC</div>
+                    <div class="text-lg font-bold text-white font-mono-tech mt-1" dir="ltr">4000 mm</div>
+                </div>
+                <div class="p-4">
+                    <div class="text-[11px] text-zinc-500">تضمین کنترل کیفیت</div>
+                    <div class="text-sm font-bold text-amber-500 mt-1.5">تایید قطعه اول (FAI)</div>
+                </div>
+            </div>
+
+            <!-- معماری زنجیره تامین سوله مرکزی -->
+            <div class="border border-zinc-800 bg-zinc-900/50 p-4 space-y-3">
+                <div class="text-xs font-bold text-zinc-300 flex justify-between items-center">
+                    <span>فرآیند اجرایی در هاب مرکزی شادآباد</span>
+                    <span class="font-mono-tech text-[10px] text-zinc-500">WORKFLOW // 01-04</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                    <div class="border-r-2 border-amber-500 pr-3">
+                        <div class="font-mono-tech text-[10px] text-amber-500">STEP 01</div>
+                        <div class="font-bold text-white mt-0.5">تامین مستقیم ورق</div>
+                        <div class="text-[11px] text-zinc-500 mt-0.5">تامین بی‌واسطه از بنکداری بازار آهن و نستینگ متمرکز</div>
+                    </div>
+                    <div class="border-r-2 border-zinc-700 pr-3">
+                        <div class="font-mono-tech text-[10px] text-zinc-500">STEP 02</div>
+                        <div class="font-bold text-white mt-0.5">برش و خم CNC</div>
+                        <div class="text-[11px] text-zinc-500 mt-0.5">اجرا در خطوط فایبر لیزر و پرس برک با نظارت اپراتور ارشد</div>
+                    </div>
+                    <div class="border-r-2 border-zinc-700 pr-3">
+                        <div class="font-mono-tech text-[10px] text-zinc-500">STEP 03</div>
+                        <div class="font-bold text-white mt-0.5">کنترل ابعادی در سوله</div>
+                        <div class="text-[11px] text-zinc-500 mt-0.5">اندازه‌گیری قطعه اول با کولیس و ثبت تصویر در پنل مشتری</div>
+                    </div>
+                    <div class="border-r-2 border-zinc-700 pr-3">
+                        <div class="font-mono-tech text-[10px] text-zinc-500">STEP 04</div>
+                        <div class="font-bold text-white mt-0.5">تحویل یکپارچه</div>
+                        <div class="text-[11px] text-zinc-500 mt-0.5">پالت‌بندی و ارسال مستقیم به کارخانه همراه با فاکتور رسمی</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ستون چپ: باکس آپلود مستقیم فایل DXF (۵ ستون) -->
+        <div class="lg:col-span-5 bg-zinc-900 border border-zinc-700 p-6 space-y-5">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <div>
+                    <h2 class="text-base font-bold text-white">ترمینال استعلام آنی قیمت (CAD Engine)</h2>
+                    <p class="text-[11px] text-zinc-400 mt-0.5">محاسبه خودکار هندسه، طول برش و وزن ورق</p>
+                </div>
+                <span class="font-mono-tech text-[11px] bg-zinc-800 text-amber-500 px-2 py-1 border border-zinc-700">DXF PARSER</span>
+            </div>
+
+            <form method="post" action="{% url 'quoting:upload_dxf' %}" enctype="multipart/form-data" class="space-y-4">
+                {% csrf_token %}
+                <label class="block border border-dashed border-zinc-600 hover:border-amber-500 bg-zinc-950 p-6 text-center cursor-pointer transition">
+                    <svg class="w-8 h-8 mx-auto text-zinc-500 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="square" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <span class="block text-xs font-bold text-white">انتخاب فایل مهندسی (.DXF)</span>
+                    <span class="block text-[11px] text-zinc-500 mt-1 font-mono-tech">AutoCAD R2004 - R2024 // Unit: Millimeters</span>
+                    <input type="file" name="dxf_file" accept=".dxf" required class="mt-4 block w-full text-xs text-zinc-400 file:ml-3 file:py-1.5 file:px-3 file:border file:border-zinc-700 file:text-xs file:font-bold file:bg-zinc-900 file:text-zinc-200 hover:file:bg-zinc-800 cursor-pointer">
+                </label>
+
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 text-xs tracking-wide transition">
+                    بارگذاری نقشه و محاسبه قیمت
+                </button>
+            </form>
+
+            <div class="border-t border-zinc-800 pt-4 flex justify-between items-center text-xs">
+                <span class="text-zinc-400">فایل DXF ندارید؟ (نقشه PDF یا دستی)</span>
+                <a href="{% url 'quoting:workspace' %}#custom-rfq" class="text-amber-500 hover:underline font-bold">
+                    ارسال برای واحد مهندسی ←
+                </a>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- بخش دوم: خدمات چهارگانه مهندسی (لینک به صفحات سئو) -->
+<section class="max-w-7xl mx-auto px-4 py-14">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 border-b border-zinc-800 pb-4">
+        <div>
+            <div class="font-mono-tech text-xs text-amber-500">MANUFACTURING CAPABILITIES</div>
+            <h2 class="text-2xl font-black text-white mt-1">خدمات تخصصی برش، شکل‌دهی و ساخت فلزات</h2>
+        </div>
+        <p class="text-xs text-zinc-500 mt-2 sm:mt-0">کلیه فرآیندها تحت استاندارد کنترل کیفیت سوله مرکزی شادآباد اجرا می‌شوند.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border border-zinc-800 divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-zinc-800 bg-zinc-900/30">
+        {% for slug, srv in services.items %}
+        <div class="p-6 flex flex-col justify-between hover:bg-zinc-900/80 transition">
+            <div class="space-y-3">
+                <div class="flex justify-between items-center font-mono-tech text-xs">
+                    <span class="text-amber-500 font-bold">{{ srv.code }}</span>
+                    <span class="text-zinc-600">CNC // INDUSTRIAL</span>
+                </div>
+                <h3 class="text-base font-bold text-white">{{ srv.h1 }}</h3>
+                <p class="text-xs text-zinc-400 leading-relaxed">{{ srv.subtitle }}</p>
+                
+                <div class="pt-3 border-t border-zinc-800/80 space-y-1.5">
+                    {% for label, val in srv.specs|slice:":3" %}
+                    <div class="flex justify-between text-[11px]">
+                        <span class="text-zinc-500">{{ label }}:</span>
+                        <span class="text-zinc-300 font-mono-tech">{{ val }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="pt-6 mt-6 border-t border-zinc-800 flex justify-between items-center">
+                <a href="{% url 'quoting:service_detail' slug %}" class="text-xs font-bold text-white hover:text-amber-500 transition">
+                    جدول مشخصات فنی و تلرانس‌ها ←
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- بخش سوم: ماشین‌حساب مهندسی وزن و قیمت روز ورق (ابزار جذب ترافیک سئو) -->
+<section id="calculator" class="bg-zinc-900/40 border-y border-zinc-800 py-14">
+    <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-5 space-y-4">
+            <div class="font-mono-tech text-xs text-amber-500">SHEET METAL WEIGHT & COST CALCULATOR</div>
+            <h2 class="text-2xl font-black text-white">ماشین‌حساب آنلاین وزن و قیمت ورق فلزی</h2>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+                پیش از بارگذاری فایل مهندسی، می‌توانید وزن دقیق شیت یا قطعه و برآورد هزینه ماده اولیه را بر اساس چگالی استاندارد و نرخ روز بازار آهن شادآباد محاسبه کنید.
+            </p>
+            <div class="bg-zinc-950 border border-zinc-800 p-4 text-[11px] font-mono-tech text-zinc-400 space-y-1" dir="ltr">
+                <div>Formula: Weight (kg) = L(m) × W(m) × T(mm) × Density(g/cm³)</div>
+                <div>Steel (ST37/Oil/Galv): 7.85 g/cm³ | Stainless 304: 7.93 g/cm³</div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-7 bg-zinc-950 border border-zinc-800 p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1.5">جنس ورق و نرخ پایه روز:</label>
+                    <select id="calcMaterial" onchange="runSheetCalculator()" class="w-full bg-zinc-900 border border-zinc-700 px-3 py-2.5 text-xs text-white focus:border-amber-500 outline-none">
+                        {% for mat in materials %}
+                        <option value="{{ mat.base_price_per_kg }}" data-density="{{ mat.density }}">
+                            {{ mat.name }} ({{ mat.base_price_per_kg|intcomma }} تومان/کیلو)
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1.5">ضخامت ورق (میلی‌متر):</label>
+                    <input type="number" id="calcThickness" value="2" step="0.5" min="0.5" max="50" oninput="runSheetCalculator()"
+                           class="w-full bg-zinc-900 border border-zinc-700 px-3 py-2.5 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1.5">طول شیت یا قطعه (میلی‌متر):</label>
+                    <input type="number" id="calcLength" value="2000" step="10" min="10" oninput="runSheetCalculator()"
+                           class="w-full bg-zinc-900 border border-zinc-700 px-3 py-2.5 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1.5">عرض شیت یا قطعه (میلی‌متر):</label>
+                    <input type="number" id="calcWidth" value="1000" step="10" min="10" oninput="runSheetCalculator()"
+                           class="w-full bg-zinc-900 border border-zinc-700 px-3 py-2.5 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+                </div>
+            </div>
+
+            <div class="mt-6 pt-5 border-t border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                <div class="bg-zinc-900 p-3 border border-zinc-800">
+                    <div class="text-[11px] text-zinc-500">وزن خالص هر شیت/قطعه:</div>
+                    <div id="calcWeightResult" class="text-base font-bold text-white font-mono-tech mt-1">31.40 kg</div>
+                </div>
+                <div class="bg-zinc-900 p-3 border border-zinc-800">
+                    <div class="text-[11px] text-zinc-500">برآورد قیمت ورق خام:</div>
+                    <div id="calcCostResult" class="text-base font-bold text-amber-500 font-mono-tech mt-1">1,381,600 تومان</div>
+                </div>
+                <a href="{% url 'quoting:workspace' %}" class="bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs py-3.5 px-4 text-center transition">
+                    محاسبه با اجرت برش و خم ←
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- بخش چهارم: جدول زنده تعرفه برش لیزر و خمکاری (مستقیم از دیتابیس) -->
+<section id="rate-card" class="max-w-7xl mx-auto px-4 py-14">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6">
+        <div>
+            <div class="font-mono-tech text-xs text-amber-500">STANDARD RATE MATRIX</div>
+            <h2 class="text-2xl font-black text-white mt-1">جدول تعرفه پایه برش لیزر و خمکاری CNC</h2>
+        </div>
+        <div class="text-xs text-zinc-400 mt-2 sm:mt-0">
+            برای تیراژ بالای ۲۰ عدد (۱۰٪ تخفیف اجرت) و تیراژ بالای ۱۰۰ عدد (۲۰٪ تخفیف اجرت) به صورت خودکار اعمال می‌گردد.
+        </div>
+    </div>
+
+    <div class="border border-zinc-800 overflow-x-auto">
+        <table class="w-full text-right text-xs border-collapse">
+            <thead>
+                <tr class="bg-zinc-900 border-b border-zinc-800 text-zinc-400">
+                    <th class="py-3 px-4 font-semibold">جنس ورق (Material)</th>
+                    <th class="py-3 px-4 font-semibold">ضخامت (mm)</th>
+                    <th class="py-3 px-4 font-semibold">نرخ روز ورق (تومان/کیلو)</th>
+                    <th class="py-3 px-4 font-semibold">نرخ برش هر متر (تومان)</th>
+                    <th class="py-3 px-4 font-semibold">نرخ هر پیرسینگ (تومان)</th>
+                    <th class="py-3 px-4 font-semibold">نرخ هر ضرب خم (تومان)</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-800/70 font-mono-tech">
+                {% for st in thicknesses %}
+                <tr class="hover:bg-zinc-900/60 transition">
+                    <td class="py-2.5 px-4 font-sans font-bold text-white">{{ st.material.name }}</td>
+                    <td class="py-2.5 px-4 text-amber-500 font-bold">{{ st.thickness_mm }} mm</td>
+                    <td class="py-2.5 px-4 text-zinc-300">{{ st.material.base_price_per_kg|intcomma }}</td>
+                    <td class="py-2.5 px-4 text-zinc-200">{{ st.cut_price_per_meter|intcomma }}</td>
+                    <td class="py-2.5 px-4 text-zinc-400">{{ st.pierce_price|intcomma }}</td>
+                    <td class="py-2.5 px-4 text-zinc-300">{% if st.can_bend %}{{ st.bend_price_per_stroke|intcomma }}{% else %}-{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+function runSheetCalculator() {
+    const matSelect = document.getElementById('calcMaterial');
+    const selectedOption = matSelect.options[matSelect.selectedIndex];
+    const pricePerKg = parseFloat(matSelect.value) || 0;
+    const density = parseFloat(selectedOption.getAttribute('data-density')) || 7.85;
+    
+    const t = parseFloat(document.getElementById('calcThickness').value) || 0;
+    const l = parseFloat(document.getElementById('calcLength').value) || 0;
+    const w = parseFloat(document.getElementById('calcWidth').value) || 0;
+
+    // Volume in cm3 = (L_mm * W_mm * T_mm) / 1000
+    const volumeCm3 = (l * w * t) / 1000.0;
+    const weightKg = (volumeCm3 * density) / 1000.0;
+    const totalCost = Math.round((weightKg * pricePerKg) / 1000) * 1000;
+
+    document.getElementById('calcWeightResult').innerText = weightKg.toFixed(2) + ' kg';
+    document.getElementById('calcCostResult').innerText = totalCost.toLocaleString('en-US') + ' تومان';
+}
+document.addEventListener('DOMContentLoaded', runSheetCalculator);
+</script>
+{% endblock %}

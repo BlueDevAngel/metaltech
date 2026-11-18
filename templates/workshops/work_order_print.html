@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>دستور کار کارگاه - کد {{ assignment.order.order_number }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body class="bg-white text-slate-900 p-8 max-w-4xl mx-auto">
+    <div class="no-print mb-6 flex justify-between bg-slate-100 p-4 rounded-xl border">
+        <span class="text-sm font-bold text-slate-700">این برگه فاقد نام و قیمت مشتری است و همراه ورق برای اپراتور کارگاه ارسال می‌شود:</span>
+        <button onclick="window.print()" class="bg-slate-900 text-white px-5 py-2 rounded-lg text-sm font-bold">🖨️ چاپ برگه دستور کار کارگاه</button>
+    </div>
+
+    <div class="border-2 border-slate-900 p-6 rounded-lg">
+        <div class="flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-4">
+            <div>
+                <h1 class="text-xl font-black">برگه دستور ساخت و کنترل کیفیت کارگاهی (Work Order)</h1>
+                <p class="text-xs text-slate-600 mt-1">واحد مهندسی و تامین متال‌تک (MetalTech.ir) - تحویل به سوله مرکزی شادآباد</p>
+            </div>
+            <div class="text-left text-xs space-y-1">
+                <div class="text-base font-black bg-slate-200 px-3 py-1 rounded">کد بچ تولید: {{ assignment.order.order_number }}</div>
+                <div><strong>تاریخ ارجاع:</strong> {{ assignment.created_at|date:"Y/m/d" }}</div>
+            </div>
+        </div>
+
+        <div class="bg-slate-100 border border-slate-400 p-3 rounded mb-4 text-xs grid grid-cols-2 gap-2">
+            <div><strong>کارگاه مجری (لیزر/خم):</strong> {{ assignment.laser_workshop.name }} ({{ assignment.laser_workshop.owner_name }})</div>
+            <div><strong>کارگاه تکمیلی:</strong> {{ assignment.secondary_workshop.name|default:"ندارد - تحویل مستقیم به سوله متال‌تک" }}</div>
+        </div>
+
+        <table class="w-full border-collapse border border-slate-900 text-xs text-center mb-6">
+            <thead class="bg-slate-200 font-bold">
+                <tr>
+                    <th class="border border-slate-900 p-2">ردیف</th>
+                    <th class="border border-slate-900 p-2">پیش‌نمایش قطعه</th>
+                    <th class="border border-slate-900 p-2">نام فایل نقشه (DXF)</th>
+                    <th class="border border-slate-900 p-2">جنس و ضخامت ورق</th>
+                    <th class="border border-slate-900 p-2">ابعاد باکس (mm)</th>
+                    <th class="border border-slate-900 p-2">تعداد خم</th>
+                    <th class="border border-slate-900 p-2">تیراژ درخواستی</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in assignment.order.items.all %}
+                <tr>
+                    <td class="border border-slate-900 p-2 font-bold">{{ forloop.counter }}</td>
+                    <td class="border border-slate-900 p-2 w-24 h-20">{{ item.svg_preview|safe }}</td>
+                    <td class="border border-slate-900 p-2 font-bold dir-ltr">{{ item.file_name }}</td>
+                    <td class="border border-slate-900 p-2 font-bold">{{ item.material_title }}</td>
+                    <td class="border border-slate-900 p-2">{{ item.dimensions_str }}</td>
+                    <td class="border border-slate-900 p-2 font-bold">{{ item.bend_count }} ضرب</td>
+                    <td class="border border-slate-900 p-2 text-base font-black">{{ item.quantity }} عدد</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- قوانین سخت‌گیرانه کنترل کیفیت و ضایعات برای اپراتور کارگاه -->
+        <div class="border-2 border-dashed border-slate-900 p-4 rounded bg-slate-50 text-xs space-y-2">
+            <h3 class="font-black text-sm">⚠️ الزامات فنی و قراردادی اپراتور (حیاتی):</h3>
+            <p><strong>۱. قانون تایید قطعه اول (First-Article Inspection):</strong> اپراتور محترم موظف است پس از برش و خمِ <u>اولین قطعه</u>، تصویر قطعه را زیر کولیس/گونیا به واتس‌اپ واحد مهندسی متال‌تک ارسال نماید و صرفاً پس از تایید کتبی، ادامه تیراژ را اجرا کند. مسئولیت خسارت ورق در صورت عدم تایید قطعه اول بر عهده کارگاه است.</p>
+            <p><strong>۲. مالکیت ضایعات و شبکه ورق:</strong> ورق ارسالی امانی بوده و متعلق به انبار متال‌تک است. کلیه ضایعات درشت و شبکه ورق باید به همراه قطعات سالم روی پالت به سوله مرکزی عودت داده شود.</p>
+            <p><strong>۳. تحویل بی‌نام:</strong> از درج هرگونه برچسب، لوگو یا فاکتور کارگاه روی بسته‌بندی قطعات خودداری فرمایید.</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 text-center text-xs mt-8 pt-4">
+            <div>امضای تحویل‌دهنده ورق (سوله متال‌تک)</div>
+            <div>امضای اپراتور / مسئول کارگاه مجری</div>
+            <div>امضای مسئول کنترل کیفیت (QC نهایی)</div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,102 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تکمیل سفارش و صدور پیش‌فاکتور | MetalTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+    <style>body { font-family: 'Vazirmatn', sans-serif; }</style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen py-10 px-4">
+    <div class="max-w-4xl mx-auto space-y-6">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+            <h1 class="text-2xl font-bold text-white">تکمیل مشخصات خریدار و صدور پیش‌فاکتور</h1>
+            <a href="{% url 'quoting:workspace' %}" class="text-sm text-sky-400 hover:underline">← بازگشت به سبد قطعات</a>
+        </div>
+
+        <form method="post" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {% csrf_token %}
+            <div class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <h2 class="text-lg font-bold text-amber-400 mb-2">۱. مشخصات تحویل‌گیرنده / شرکت</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">نام و نام خانوادگی رابط *</label>
+                        <input type="text" name="customer_name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">شماره موبایل (جهت پیامک وضعیت تولید) *</label>
+                        <input type="text" name="customer_phone" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">نام شرکت / کارفرما (جهت درج در پیش‌فاکتور)</label>
+                        <input type="text" name="company_name" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">شناسه ملی / کد اقتصادی (اختیاری)</label>
+                        <input type="text" name="national_id" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">آدرس دقیق کارخانه / محل تخلیه بار *</label>
+                    <textarea name="shipping_address" rows="2" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm"></textarea>
+                </div>
+
+                <div class="pt-4 border-t border-slate-800 space-y-3">
+                    <h2 class="text-lg font-bold text-amber-400">۲. شرایط مالی و روش تسویه</h2>
+                    <label class="flex items-center gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800 cursor-pointer">
+                        <input type="checkbox" name="want_official_invoice" id="taxToggle" onchange="updateTotal()" class="w-4 h-4">
+                        <span class="text-sm">درخواست صدور <strong>فاکتور رسمی سامانه مودیان</strong> (+۱۰٪ مالیات ارزش افزوده)</span>
+                    </label>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <label class="flex items-center gap-3 bg-slate-950 p-4 rounded-xl border border-sky-500/40 cursor-pointer">
+                            <input type="radio" name="payment_method" value="online" checked>
+                            <div>
+                                <div class="text-sm font-bold text-white">پرداخت آنلاین (زرین‌پال)</div>
+                                <div class="text-xs text-slate-400">شروع فوری برش لیزر پس از پرداخت</div>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 cursor-pointer">
+                            <input type="radio" name="payment_method" value="bank_transfer">
+                            <div>
+                                <div class="text-sm font-bold text-white">دریافت پیش‌فاکتور رسمی و واریز پایا</div>
+                                <div class="text-xs text-slate-400">مخصوص واحد مالی شرکت‌ها و سازمان‌ها</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- خلاصه مالی -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 h-fit space-y-4">
+                <h3 class="font-bold text-white border-b border-slate-800 pb-3">خلاصه صورت‌حساب</h3>
+                <div class="flex justify-between text-sm text-slate-300">
+                    <span>جمع خالص قطعات ({{ quote.items.count }} ردیف):</span>
+                    <strong>{{ quote.total_price|intcomma }} ت</strong>
+                </div>
+                <div class="flex justify-between text-sm text-slate-300">
+                    <span>وزن کل ورق مصرفی:</span>
+                    <strong>{{ quote.total_weight_kg }} کیلوگرم</strong>
+                </div>
+                <div class="border-t border-slate-800 pt-3 flex justify-between items-center">
+                    <span class="font-bold">مبلغ نهایی:</span>
+                    <span id="finalPrice" class="text-xl font-black text-amber-400">{{ quote.total_price|intcomma }} تومان</span>
+                </div>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl shadow-lg transition">
+                    ثبت قطعی و ادامه
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const basePrice = Number("{{ quote.total_price|escapejs }}");
+        function updateTotal() {
+            const withTax = document.getElementById('taxToggle').checked;
+            const final = withTax ? Math.round(basePrice * 1.1) : basePrice;
+            document.getElementById('finalPrice').innerText = final.toLocaleString('en-US') + ' تومان';
+        }
+    </script>
+</body>
+</html>

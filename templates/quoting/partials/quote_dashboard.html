@@ -1,0 +1,144 @@
+{% load humanize %}
+<div id="quote-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    
+    <!-- لیست قطعات مهندسی (۸ ستون) -->
+    <div class="lg:col-span-8 space-y-4">
+        {% for item in quote.items.all %}
+        <div class="bg-zinc-900 border border-zinc-800 p-5 transition hover:border-zinc-700">
+            <div class="flex flex-col md:flex-row gap-6 items-start">
+                
+                <!-- پیش‌نمایش هندسی قطعه (SVG) -->
+                <div class="w-40 h-40 flex-shrink-0 bg-zinc-950">
+                    {{ item.svg_preview|safe }}
+                </div>
+
+                <!-- مشخصات و پارامترهای ساخت -->
+                <div class="flex-1 w-full space-y-4">
+                    <div class="flex justify-between items-start border-b border-zinc-800 pb-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="bg-zinc-800 border border-zinc-700 text-amber-500 font-mono-tech text-[10px] px-2 py-0.5 font-bold">
+                                    PART #{{ forloop.counter }}
+                                </span>
+                                <h3 class="text-sm font-bold text-white font-mono-tech" dir="ltr">{{ item.file_name }}</h3>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2 text-[11px] text-zinc-400 font-mono-tech">
+                                <div>DIM: <strong class="text-zinc-200">{{ item.width_mm }}×{{ item.height_mm }} mm</strong></div>
+                                <div>CUT: <strong class="text-zinc-200">{{ item.cut_length_m }} m</strong></div>
+                                <div>PIERCE: <strong class="text-zinc-200">{{ item.pierce_count }} pts</strong></div>
+                                <div>GROSS WT: <strong class="text-zinc-200">{{ item.unit_weight_kg }} kg</strong></div>
+                            </div>
+                        </div>
+
+                        <form method="post" action="{% url 'quoting:delete_item' item.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="text-zinc-500 hover:text-red-400 text-xs border border-zinc-800 hover:border-red-900 px-2.5 py-1 transition">
+                                حذف ردیف
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- کنترلرهای تغییر آنی متریال، تیراژ و خم (HTMX) -->
+                    <form hx-post="{% url 'quoting:update_item' item.id %}"
+                          hx-target="#quote-dashboard"
+                          hx-swap="outerHTML"
+                          hx-trigger="change from:select, change delay:300ms from:input"
+                          class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {% csrf_token %}
+                        <div>
+                            <label class="block text-[11px] text-zinc-400 mb-1">جنس و ضخامت ورق:</label>
+                            <select name="sheet_thickness" class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2 text-xs text-white focus:border-amber-500 outline-none">
+                                {% for st in thicknesses %}
+                                <option value="{{ st.id }}" {% if st.id == item.sheet_thickness.id %}selected{% endif %}>
+                                    {{ st.material.name }} - {{ st.thickness_mm }} میلی‌متر
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] text-zinc-400 mb-1">تیراژ درخواستی (عدد):</label>
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1"
+                                   class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] text-zinc-400 mb-1">تعداد ضرب خم در هر قطعه:</label>
+                            <input type="number" name="bend_count" value="{{ item.bend_count }}" min="0"
+                                   class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+                        </div>
+                    </form>
+
+                    <!-- جدول تفکیک بهای تمام‌شده مهندسی -->
+                    <div class="bg-zinc-950 border border-zinc-800 px-4 py-2.5 flex flex-wrap justify-between items-center text-xs font-mono-tech">
+                        <div class="flex flex-wrap gap-4 text-zinc-400">
+                            <span>ورق: <strong class="text-zinc-200">{{ item.unit_material_cost|intcomma }}</strong></span>
+                            <span>برش: <strong class="text-zinc-200">{{ item.unit_cutting_cost|intcomma }}</strong></span>
+                            {% if item.unit_bending_cost > 0 %}
+                            <span>خم: <strong class="text-zinc-200">{{ item.unit_bending_cost|intcomma }}</strong></span>
+                            {% endif %}
+                        </div>
+                        <div class="mt-2 sm:mt-0">
+                            <span class="text-zinc-500">فی واحد: {{ item.unit_price|intcomma }} | </span>
+                            <span class="text-amber-500 font-bold">جمع ردیف: {{ item.total_price|intcomma }} تومان</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        {% empty %}
+        <div class="bg-zinc-900/40 border border-dashed border-zinc-800 p-12 text-center space-y-2">
+            <div class="font-mono-tech text-xs text-zinc-500">NO CAD FILES LOADED</div>
+            <p class="text-xs text-zinc-400">هنوز نقشه مهندسی در میز کار شما بارگذاری نشده است. فایل <code class="text-amber-500 font-mono-tech">.DXF</code> خود را از کادر بالا انتخاب کنید.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- پنل خلاصه پیش‌فاکتور (۴ ستون) -->
+    <div class="lg:col-span-4">
+        <div class="bg-zinc-900 border border-zinc-800 p-6 sticky top-24 space-y-4">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <h3 class="text-sm font-bold text-white">خلاصه صورت‌حساب تولید</h3>
+                <span class="font-mono-tech text-[10px] text-zinc-500">INSTANT QUOTE</span>
+            </div>
+
+            <div class="space-y-2.5 text-xs">
+                <div class="flex justify-between text-zinc-400">
+                    <span>تعداد ردیف نقشه‌ها:</span>
+                    <strong class="text-white font-mono-tech">{{ quote.items.count }} ردیف</strong>
+                </div>
+                <div class="flex justify-between text-zinc-400">
+                    <span>وزن ناخالص ورق مصرفی:</span>
+                    <strong class="text-white font-mono-tech">{{ quote.total_weight_kg }} kg</strong>
+                </div>
+                <div class="flex justify-between text-zinc-400">
+                    <span>محل تحویل و کنترل کیفیت:</span>
+                    <strong class="text-zinc-200">سوله مرکزی شادآباد</strong>
+                </div>
+                <div class="flex justify-between text-zinc-400">
+                    <span>زمان تحویل استاندارد:</span>
+                    <strong class="text-emerald-400 font-mono-tech">24 - 48 Hours</strong>
+                </div>
+
+                <div class="border-t border-zinc-800 pt-3 mt-3 flex justify-between items-baseline">
+                    <span class="font-bold text-white">جمع خالص سفارش:</span>
+                    <span class="text-lg font-black text-amber-500 font-mono-tech">{{ quote.total_price|intcomma }} تومان</span>
+                </div>
+            </div>
+
+            {% if quote.items.count > 0 %}
+            <div class="pt-2 space-y-3">
+                <a href="{% url 'orders:checkout' %}" class="block w-full text-center bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs py-3.5 transition">
+                    تایید مشخصات و صدور پیش‌فاکتور رسمی
+                </a>
+                <div class="bg-zinc-950 border border-zinc-800 p-3 text-[11px] text-zinc-400 space-y-1">
+                    <div>- امکان پرداخت آنلاین یا واریز پایا با پیش‌فاکتور رسمی</div>
+                    <div>- تضمین تطابق ابعادی قطعه اول پیش از تولید تیراژ</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
