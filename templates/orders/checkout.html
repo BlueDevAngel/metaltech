@@ -1,102 +1,157 @@
+{% extends "base.html" %}
 {% load humanize %}
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>تکمیل سفارش و صدور پیش‌فاکتور | MetalTech</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
-    <style>body { font-family: 'Vazirmatn', sans-serif; }</style>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen py-10 px-4">
-    <div class="max-w-4xl mx-auto space-y-6">
-        <div class="flex justify-between items-center border-b border-slate-800 pb-4">
-            <h1 class="text-2xl font-bold text-white">تکمیل مشخصات خریدار و صدور پیش‌فاکتور</h1>
-            <a href="{% url 'quoting:workspace' %}" class="text-sm text-sky-400 hover:underline">← بازگشت به سبد قطعات</a>
+
+{% block title %}تکمیل مشخصات حقوقی و صدور پیش‌فاکتور | متال‌تک{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10 space-y-6">
+
+    <div class="flex flex-wrap justify-between items-center border-b border-zinc-800 pb-4 gap-4">
+        <div>
+            <div class="font-mono-tech text-[11px] text-amber-500">CHECKOUT & PROFORMA GENERATION</div>
+            <h1 class="text-xl font-black text-white mt-0.5">تکمیل مشخصات خریدار و صدور پیش‌فاکتور رسمی</h1>
         </div>
-
-        <form method="post" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {% csrf_token %}
-            <div class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-                <h2 class="text-lg font-bold text-amber-400 mb-2">۱. مشخصات تحویل‌گیرنده / شرکت</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">نام و نام خانوادگی رابط *</label>
-                        <input type="text" name="customer_name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">شماره موبایل (جهت پیامک وضعیت تولید) *</label>
-                        <input type="text" name="customer_phone" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">نام شرکت / کارفرما (جهت درج در پیش‌فاکتور)</label>
-                        <input type="text" name="company_name" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">شناسه ملی / کد اقتصادی (اختیاری)</label>
-                        <input type="text" name="national_id" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">آدرس دقیق کارخانه / محل تخلیه بار *</label>
-                    <textarea name="shipping_address" rows="2" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm"></textarea>
-                </div>
-
-                <div class="pt-4 border-t border-slate-800 space-y-3">
-                    <h2 class="text-lg font-bold text-amber-400">۲. شرایط مالی و روش تسویه</h2>
-                    <label class="flex items-center gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800 cursor-pointer">
-                        <input type="checkbox" name="want_official_invoice" id="taxToggle" onchange="updateTotal()" class="w-4 h-4">
-                        <span class="text-sm">درخواست صدور <strong>فاکتور رسمی سامانه مودیان</strong> (+۱۰٪ مالیات ارزش افزوده)</span>
-                    </label>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                        <label class="flex items-center gap-3 bg-slate-950 p-4 rounded-xl border border-sky-500/40 cursor-pointer">
-                            <input type="radio" name="payment_method" value="online" checked>
-                            <div>
-                                <div class="text-sm font-bold text-white">پرداخت آنلاین (زرین‌پال)</div>
-                                <div class="text-xs text-slate-400">شروع فوری برش لیزر پس از پرداخت</div>
-                            </div>
-                        </label>
-                        <label class="flex items-center gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 cursor-pointer">
-                            <input type="radio" name="payment_method" value="bank_transfer">
-                            <div>
-                                <div class="text-sm font-bold text-white">دریافت پیش‌فاکتور رسمی و واریز پایا</div>
-                                <div class="text-xs text-slate-400">مخصوص واحد مالی شرکت‌ها و سازمان‌ها</div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- خلاصه مالی -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 h-fit space-y-4">
-                <h3 class="font-bold text-white border-b border-slate-800 pb-3">خلاصه صورت‌حساب</h3>
-                <div class="flex justify-between text-sm text-slate-300">
-                    <span>جمع خالص قطعات ({{ quote.items.count }} ردیف):</span>
-                    <strong>{{ quote.total_price|intcomma }} ت</strong>
-                </div>
-                <div class="flex justify-between text-sm text-slate-300">
-                    <span>وزن کل ورق مصرفی:</span>
-                    <strong>{{ quote.total_weight_kg }} کیلوگرم</strong>
-                </div>
-                <div class="border-t border-slate-800 pt-3 flex justify-between items-center">
-                    <span class="font-bold">مبلغ نهایی:</span>
-                    <span id="finalPrice" class="text-xl font-black text-amber-400">{{ quote.total_price|intcomma }} تومان</span>
-                </div>
-                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl shadow-lg transition">
-                    ثبت قطعی و ادامه
-                </button>
-            </div>
-        </form>
+        <a href="{% url 'quoting:workspace' %}" class="text-xs text-zinc-400 hover:text-amber-500 font-bold transition">
+            بازگشت به میز کار و ویرایش نقشه‌ها ←
+        </a>
     </div>
 
-    <script>
-        const basePrice = Number("{{ quote.total_price|escapejs }}");
-        function updateTotal() {
-            const withTax = document.getElementById('taxToggle').checked;
-            const final = withTax ? Math.round(basePrice * 1.1) : basePrice;
-            document.getElementById('finalPrice').innerText = final.toLocaleString('en-US') + ' تومان';
-        }
-    </script>
-</body>
-</html>
+    <form method="post" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {% csrf_token %}
+        
+        <!-- فرم اطلاعات خریدار و روش تسویه (۸ ستون) -->
+        <div class="lg:col-span-8 bg-zinc-900 border border-zinc-800 p-6 space-y-6">
+            <div>
+                <div class="text-xs font-bold text-amber-500 border-b border-zinc-800 pb-2 mb-4">
+                    بخش اول: مشخصات تحویل‌گیرنده و اطلاعات حقوقی شرکت
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] text-zinc-400 mb-1">نام و نام خانوادگی نماینده / خریدار *</label>
+                        <input type="text" name="customer_name" required
+                               class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2.5 text-xs text-white focus:border-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-zinc-400 mb-1">شماره همراه (جهت دریافت کد پیگیری) *</label>
+                        <input type="text" name="customer_phone" placeholder="0912..." required dir="ltr"
+                               class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2.5 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-zinc-400 mb-1">نام شخصیت حقوقی / شرکت (اختیاری)</label>
+                        <input type="text" name="company_name"
+                               class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2.5 text-xs text-white focus:border-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-zinc-400 mb-1">شناسه ملی / کد اقتصادی (جهت درج در فاکتور)</label>
+                        <input type="text" name="national_id" dir="ltr"
+                               class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2.5 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-[11px] text-zinc-400 mb-1">نشانی دقیق کارخانه / کارگاه جهت ارسال بار *</label>
+                        <textarea name="shipping_address" rows="2" required
+                                  class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2.5 text-xs text-white focus:border-amber-500 outline-none"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="text-xs font-bold text-amber-500 border-b border-zinc-800 pb-2">
+                    بخش دوم: نوع فاکتور و روش تسویه حساب
+                </div>
+
+                <label class="flex items-center gap-3 bg-zinc-950 p-3.5 border border-zinc-800 cursor-pointer hover:border-zinc-700">
+                    <input type="checkbox" name="want_official_invoice" id="taxToggle" onchange="recalculateCheckout()" class="w-4 h-4">
+                    <span class="text-xs text-zinc-200">
+                        درخواست صدور <strong>فاکتور رسمی سامانه مودیان</strong> (افزودن ۱۰٪ مالیات بر ارزش افزوده به جمع کل)
+                    </span>
+                </label>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    <label class="flex items-start gap-3 bg-zinc-950 p-4 border border-zinc-700 cursor-pointer hover:border-amber-500">
+                        <input type="radio" name="payment_method" value="online" checked class="mt-1">
+                        <div>
+                            <div class="text-xs font-bold text-white">پرداخت آنلاین (درگاه زرین‌پال)</div>
+                            <div class="text-[11px] text-zinc-500 mt-1">انتقال مستقیم به صف برش لیزر و تامین ورق بلافاصله پس از تراکنش</div>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 bg-zinc-950 p-4 border border-zinc-800 cursor-pointer hover:border-amber-500">
+                        <input type="radio" name="payment_method" value="bank_transfer" class="mt-1">
+                        <div>
+                            <div class="text-xs font-bold text-white">صدور پیش‌فاکتور رسمی و واریز بانکی (پایا/ساتنا)</div>
+                            <div class="text-[11px] text-zinc-500 mt-1">دریافت فایل PDF پیش‌فاکتور حاوی شماره شبا و بارگذاری تصویر فیش واریزی</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ستون خلاصه صورت‌حساب (۴ ستون) -->
+        <div class="lg:col-span-4 bg-zinc-900 border border-zinc-800 p-6 space-y-4 sticky top-24">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <h2 class="text-sm font-bold text-white">خلاصه نهایی صورت‌حساب</h2>
+                <span class="font-mono-tech text-[10px] text-zinc-500">SUMMARY</span>
+            </div>
+
+            <div class="space-y-2.5 text-xs">
+                <div class="flex justify-between text-zinc-400">
+                    <span>تعداد ردیف نقشه‌ها:</span>
+                    <strong class="text-white font-mono-tech">{{ quote.items.count }} ردیف</strong>
+                </div>
+                <div class="flex justify-between text-zinc-400">
+                    <span>وزن کل ورق مصرفی:</span>
+                    <strong class="text-white font-mono-tech">{{ quote.total_weight_kg }} kg</strong>
+                </div>
+                <div class="flex justify-between text-zinc-400">
+                    <span>جمع بهای قطعات:</span>
+                    <strong class="text-zinc-200 font-mono-tech">{{ quote.subtotal_items_price|intcomma }} تومان</strong>
+                </div>
+
+                {% if quote.min_fee_supplement > 0 %}
+                <div class="flex justify-between text-amber-400">
+                    <span>مابه‌التفاوت حداقل اجرت کارگاه:</span>
+                    <strong class="font-mono-tech">+{{ quote.min_fee_supplement|intcomma }} تومان</strong>
+                </div>
+                {% endif %}
+
+                <div id="taxRow" class="hidden flex justify-between text-zinc-300">
+                    <span>ارزش افزوده (۱۰٪):</span>
+                    <strong id="taxAmountText" class="font-mono-tech">0 تومان</strong>
+                </div>
+
+                <div class="border-t border-zinc-800 pt-3 mt-3 flex justify-between items-baseline">
+                    <span class="font-bold text-white">مبلغ قابل پرداخت:</span>
+                    <span id="finalPayableText" class="text-lg font-black text-amber-500 font-mono-tech">{{ quote.total_price|intcomma }} تومان</span>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3.5 text-xs transition">
+                ثبت قطعی سفارش و صدور پیش‌فاکتور
+            </button>
+
+            <div class="text-[11px] text-zinc-500 leading-relaxed border-t border-zinc-800 pt-3">
+                اعتبار قیمت ورق در پیش‌فاکتور صادره ۲۴ ساعت می‌باشد.
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<script>
+const baseSubtotal = Number('{{ quote.total_price|default:0 }}');
+function recalculateCheckout() {
+    const isOfficial = document.getElementById('taxToggle').checked;
+    const taxRow = document.getElementById('taxRow');
+    const taxAmount = isOfficial ? Math.round(baseSubtotal * 0.10) : 0;
+    const finalPayable = baseSubtotal + taxAmount;
+
+    if (isOfficial) {
+        taxRow.classList.remove('hidden');
+        document.getElementById('taxAmountText').innerText = taxAmount.toLocaleString('en-US') + ' تومان';
+    } else {
+        taxRow.classList.add('hidden');
+    }
+    document.getElementById('finalPayableText').innerText = finalPayable.toLocaleString('en-US') + ' تومان';
+}
+</script>
+{% endblock %}

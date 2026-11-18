@@ -4,7 +4,7 @@
     <!-- لیست قطعات مهندسی (۸ ستون) -->
     <div class="lg:col-span-8 space-y-4">
         {% for item in quote.items.all %}
-        <div class="bg-zinc-900 border border-zinc-800 p-5 transition hover:border-zinc-700">
+        <div class="bg-zinc-900 border {% if item.is_oversized %}border-red-700{% elif item.engineering_warnings %}border-amber-600/70{% else %}border-zinc-800{% endif %} p-5 transition">
             <div class="flex flex-col md:flex-row gap-6 items-start">
                 
                 <!-- پیش‌نمایش هندسی قطعه (SVG) -->
@@ -38,14 +38,26 @@
                         </form>
                     </div>
 
-                    <!-- کنترلرهای تغییر آنی متریال، تیراژ و خم (HTMX) -->
+                    <!-- هشدارهای هوشمند مهندسی (مقیاس، ابعاد میز لیزر، فضای خالی) -->
+                    {% if item.engineering_warnings %}
+                    <div class="bg-amber-950/30 border border-amber-600/50 p-3 space-y-1">
+                        {% for warn in item.engineering_warnings %}
+                        <div class="text-[11px] text-amber-300 flex items-start gap-2">
+                            <span class="font-mono-tech font-bold text-amber-500">[DFM-WARN]</span>
+                            <span>{{ warn }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- کنترلرهای تغییر آنی متریال، واحد نقشه، تیراژ و خم (HTMX) -->
                     <form hx-post="{% url 'quoting:update_item' item.id %}"
                           hx-target="#quote-dashboard"
                           hx-swap="outerHTML"
                           hx-trigger="change from:select, change delay:300ms from:input"
-                          class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                         {% csrf_token %}
-                        <div>
+                        <div class="sm:col-span-2">
                             <label class="block text-[11px] text-zinc-400 mb-1">جنس و ضخامت ورق:</label>
                             <select name="sheet_thickness" class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2 text-xs text-white focus:border-amber-500 outline-none">
                                 {% for st in thicknesses %}
@@ -57,29 +69,39 @@
                         </div>
 
                         <div>
-                            <label class="block text-[11px] text-zinc-400 mb-1">تیراژ درخواستی (عدد):</label>
-                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1"
-                                   class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+                            <label class="block text-[11px] text-zinc-400 mb-1">واحد مقیاس نقشه:</label>
+                            <select name="drawing_unit" class="w-full bg-zinc-950 border border-zinc-700 px-2.5 py-2 text-xs text-amber-400 font-mono-tech focus:border-amber-500 outline-none">
+                                {% for code, label in item.UNIT_CHOICES %}
+                                <option value="{{ code }}" {% if code == item.drawing_unit %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
 
-                        <div>
-                            <label class="block text-[11px] text-zinc-400 mb-1">تعداد ضرب خم در هر قطعه:</label>
-                            <input type="number" name="bend_count" value="{{ item.bend_count }}" min="0"
-                                   class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] text-zinc-400 mb-1">تیراژ:</label>
+                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1"
+                                       class="w-full bg-zinc-950 border border-zinc-700 px-2.5 py-2 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-zinc-400 mb-1">تعداد خم:</label>
+                                <input type="number" name="bend_count" value="{{ item.bend_count }}" min="0"
+                                       class="w-full bg-zinc-950 border border-zinc-700 px-2.5 py-2 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+                            </div>
                         </div>
                     </form>
 
                     <!-- جدول تفکیک بهای تمام‌شده مهندسی -->
                     <div class="bg-zinc-950 border border-zinc-800 px-4 py-2.5 flex flex-wrap justify-between items-center text-xs font-mono-tech">
                         <div class="flex flex-wrap gap-4 text-zinc-400">
-                            <span>ورق: <strong class="text-zinc-200">{{ item.unit_material_cost|intcomma }}</strong></span>
-                            <span>برش: <strong class="text-zinc-200">{{ item.unit_cutting_cost|intcomma }}</strong></span>
+                            <span>ورق واحد: <strong class="text-zinc-200">{{ item.unit_material_cost|intcomma }}</strong></span>
+                            <span>برش واحد: <strong class="text-zinc-200">{{ item.unit_cutting_cost|intcomma }}</strong></span>
                             {% if item.unit_bending_cost > 0 %}
-                            <span>خم: <strong class="text-zinc-200">{{ item.unit_bending_cost|intcomma }}</strong></span>
+                            <span>خم واحد: <strong class="text-zinc-200">{{ item.unit_bending_cost|intcomma }}</strong></span>
                             {% endif %}
                         </div>
                         <div class="mt-2 sm:mt-0">
-                            <span class="text-zinc-500">فی واحد: {{ item.unit_price|intcomma }} | </span>
+                            <span class="text-zinc-500">فی: {{ item.unit_price|intcomma }} | </span>
                             <span class="text-amber-500 font-bold">جمع ردیف: {{ item.total_price|intcomma }} تومان</span>
                         </div>
                     </div>
@@ -113,30 +135,39 @@
                     <strong class="text-white font-mono-tech">{{ quote.total_weight_kg }} kg</strong>
                 </div>
                 <div class="flex justify-between text-zinc-400">
-                    <span>محل تحویل و کنترل کیفیت:</span>
-                    <strong class="text-zinc-200">سوله مرکزی شادآباد</strong>
-                </div>
-                <div class="flex justify-between text-zinc-400">
-                    <span>زمان تحویل استاندارد:</span>
-                    <strong class="text-emerald-400 font-mono-tech">24 - 48 Hours</strong>
+                    <span>جمع خالص قطعات:</span>
+                    <strong class="text-zinc-200 font-mono-tech">{{ quote.subtotal_items_price|intcomma }} تومان</strong>
                 </div>
 
+                {% if quote.min_fee_supplement > 0 %}
+                <div class="flex justify-between text-amber-400/90 bg-zinc-950 border border-zinc-800 p-2">
+                    <span>مابه‌التفاوت حداقل اجرت کارگاه:</span>
+                    <strong class="font-mono-tech">+{{ quote.min_fee_supplement|intcomma }} تومان</strong>
+                </div>
+                {% endif %}
+
                 <div class="border-t border-zinc-800 pt-3 mt-3 flex justify-between items-baseline">
-                    <span class="font-bold text-white">جمع خالص سفارش:</span>
+                    <span class="font-bold text-white">مبلغ نهایی استعلام:</span>
                     <span class="text-lg font-black text-amber-500 font-mono-tech">{{ quote.total_price|intcomma }} تومان</span>
                 </div>
             </div>
 
             {% if quote.items.count > 0 %}
-            <div class="pt-2 space-y-3">
-                <a href="{% url 'orders:checkout' %}" class="block w-full text-center bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs py-3.5 transition">
-                    تایید مشخصات و صدور پیش‌فاکتور رسمی
-                </a>
-                <div class="bg-zinc-950 border border-zinc-800 p-3 text-[11px] text-zinc-400 space-y-1">
-                    <div>- امکان پرداخت آنلاین یا واریز پایا با پیش‌فاکتور رسمی</div>
-                    <div>- تضمین تطابق ابعادی قطعه اول پیش از تولید تیراژ</div>
+                {% if quote.has_oversized_items %}
+                <div class="bg-red-950/40 border border-red-800 p-3 text-[11px] text-red-200 leading-relaxed">
+                    یکی از قطعات بزرگ‌تر از ابعاد استاندارد میز لیزر (3000×1500 میلی‌متر) است. لطفاً واحد مقیاس نقشه را اصلاح کنید یا نقشه را از فرم مهندسی پایین صفحه ارسال نمایید.
                 </div>
-            </div>
+                {% else %}
+                <div class="pt-2 space-y-3">
+                    <a href="{% url 'orders:checkout' %}" class="block w-full text-center bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs py-3.5 transition">
+                        تایید مشخصات و صدور پیش‌فاکتور رسمی
+                    </a>
+                    <div class="bg-zinc-950 border border-zinc-800 p-3 text-[11px] text-zinc-400 space-y-1">
+                        <div>- هر فایل DXF باید فقط شامل یک قطعه بدون کادر باشد</div>
+                        <div>- اعتبار قیمت پیش‌فاکتور: ۲۴ ساعت کاری</div>
+                    </div>
+                </div>
+                {% endif %}
             {% endif %}
         </div>
     </div>

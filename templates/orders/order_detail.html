@@ -1,96 +1,200 @@
+{% extends "base.html" %}
 {% load humanize %}
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>رهگیری سفارش {{ order.order_number }} | MetalTech</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
-    <style>body { font-family: 'Vazirmatn', sans-serif; }</style>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen py-8 px-4">
-    <div class="max-w-5xl mx-auto space-y-6">
 
-        {% if messages %}
-        {% for message in messages %}
-        <div class="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500 text-emerald-200 text-sm">{{ message }}</div>
-        {% endfor %}
-        {% endif %}
+{% block title %}وضعیت تولید سفارش {{ order.order_number }} | متال‌تک{% endblock %}
 
-        <!-- هدر سفارش و دکمه چاپ پیش‌فاکتور -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-wrap justify-between items-center gap-4">
-            <div>
-                <span class="text-xs text-slate-400">کد پیگیری اختصاصی شما:</span>
-                <h1 class="text-2xl font-black text-amber-400">{{ order.order_number }}</h1>
-                <p class="text-xs text-slate-300 mt-1">خریدار: {{ order.customer_name }} {% if order.company_name %}({{ order.company_name }}){% endif %}</p>
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10 space-y-6">
+
+    <!-- هدر وضعیت سفارش و عملیات مالی -->
+    <div class="bg-zinc-900 border border-zinc-800 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="space-y-1">
+            <div class="flex items-center gap-3">
+                <span class="font-mono-tech text-xs px-2 py-0.5 font-bold {% if order.is_paid %}bg-emerald-500 text-zinc-950{% elif order.is_price_expired %}bg-red-900 text-red-200{% else %}bg-amber-500 text-zinc-950{% endif %}">
+                    {% if order.is_paid %}PAID // تسویه شده{% elif order.is_price_expired %}EXPIRED // منقضی شده{% else %}PENDING // در انتظار پرداخت{% endif %}
+                </span>
+                <span class="font-mono-tech text-xs text-zinc-400">
+                    LOCKED AT: {{ order.price_locked_at|date:"Y/m/d H:i" }}
+                </span>
             </div>
-            <div class="flex gap-3">
-                <a href="{% url 'orders:invoice' order.id %}" target="_blank" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold">
-                    🖨️ مشاهده و چاپ پیش‌فاکتور رسمی (PDF)
-                </a>
-                {% if not order.is_paid %}
-                <a href="{% url 'orders:zarinpal_pay' order.id %}" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-5 py-2.5 rounded-xl text-sm font-bold">
-                    💳 پرداخت آنلاین زرین‌پال
+            <h1 class="text-2xl font-black text-white font-mono-tech pt-1">{{ order.order_number }}</h1>
+            <p class="text-xs text-zinc-400">
+                کارفرما: <strong class="text-zinc-200">{{ order.customer_name }}</strong>
+                {% if order.company_name %} ({{ order.company_name }}){% endif %} |
+                تلفن: <span class="font-mono-tech text-zinc-300">{{ order.customer_phone }}</span>
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <a href="{% url 'orders:invoice' order.id %}" target="_blank"
+               class="bg-zinc-950 hover:bg-zinc-800 border border-zinc-700 text-white px-4 py-2.5 text-xs font-bold transition">
+                مشاهده و چاپ پیش‌فاکتور رسمی (PDF)
+            </a>
+
+            {% if not order.is_paid %}
+                {% if order.is_price_expired %}
+                <form method="post" action="{% url 'orders:refresh_price' order.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-zinc-950 px-5 py-2.5 text-xs font-bold transition">
+                        بروزرسانی قیمت به نرخ روز بازار آهن
+                    </button>
+                </form>
+                {% else %}
+                <a href="{% url 'orders:zarinpal_pay' order.id %}"
+                   class="bg-amber-500 hover:bg-amber-400 text-zinc-950 px-5 py-2.5 text-xs font-bold transition">
+                    پرداخت آنلاین ({{ order.payable_amount|intcomma }} تومان)
                 </a>
                 {% endif %}
-            </div>
-        </div>
-
-        <!-- نوار رهگیری ۵ مرحله‌ای خط تولید سوله شادآباد -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <h2 class="text-base font-bold text-white mb-6">وضعیت لحظه‌ای سفارش در خط تولید MetalTech:</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 text-center">
-                <div class="p-3 rounded-xl border {% if order.current_step_number >= 1 %}bg-emerald-500/10 border-emerald-500 text-emerald-300{% else %}bg-slate-950 border-slate-800 text-slate-500{% endif %}">
-                    <div class="text-lg font-black">مرحله ۱</div>
-                    <div class="text-xs mt-1">تایید نقشه و Nesting</div>
-                </div>
-                <div class="p-3 rounded-xl border {% if order.current_step_number >= 2 %}bg-emerald-500/10 border-emerald-500 text-emerald-300{% else %}bg-slate-950 border-slate-800 text-slate-500{% endif %}">
-                    <div class="text-lg font-black">مرحله ۲</div>
-                    <div class="text-xs mt-1">تامین ورق از سوله مرکزی</div>
-                </div>
-                <div class="p-3 rounded-xl border {% if order.current_step_number >= 3 %}bg-emerald-500/10 border-emerald-500 text-emerald-300{% else %}bg-slate-950 border-slate-800 text-slate-500{% endif %}">
-                    <div class="text-lg font-black">مرحله ۳</div>
-                    <div class="text-xs mt-1">برش لیزر و خم‌کاری CNC</div>
-                </div>
-                <div class="p-3 rounded-xl border {% if order.current_step_number >= 4 %}bg-emerald-500/10 border-emerald-500 text-emerald-300{% else %}bg-slate-950 border-slate-800 text-slate-500{% endif %}">
-                    <div class="text-lg font-black">مرحله ۴</div>
-                    <div class="text-xs mt-1">کنترل کیفیت (QC قطعه اول)</div>
-                </div>
-                <div class="p-3 rounded-xl border {% if order.current_step_number >= 5 %}bg-emerald-500/10 border-emerald-500 text-emerald-300{% else %}bg-slate-950 border-slate-800 text-slate-500{% endif %}">
-                    <div class="text-lg font-black">مرحله ۵</div>
-                    <div class="text-xs mt-1">بسته‌بندی و ارسال بار</div>
-                </div>
-            </div>
-
-            <!-- نمایش عکس کنترل کیفیت قطعه اول زیر کولیس (برگ برنده اعتمادسازی) -->
-            {% if order.qc_first_article_image %}
-            <div class="mt-6 bg-slate-950 border border-sky-500/40 rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-center">
-                <img src="{{ order.qc_first_article_image.url }}" class="w-48 h-36 object-cover rounded-lg border border-slate-700">
-                <div>
-                    <span class="bg-sky-500/20 text-sky-400 text-xs px-2.5 py-1 rounded font-bold">گزارش واحد کنترل کیفیت (QC)</span>
-                    <h3 class="text-white font-bold mt-2">تصویر بررسی ابعادی قطعه اول در سوله شادآباد</h3>
-                    <p class="text-xs text-slate-300 mt-1">{{ order.qc_engineer_note|default:"ابعاد برش و زوایای خم قطعه اول با کولیس دیجیتال مطابقت داده شد و مورد تایید مهندس ناظر است." }}</p>
-                </div>
-            </div>
             {% endif %}
         </div>
+    </div>
 
-        <!-- بخش بارگذاری فیش بانکی برای شرکت‌ها (در صورتی که هنوز پرداخت نشده) -->
-        {% if not order.is_paid %}
-        <div class="bg-slate-900 border border-amber-500/40 rounded-2xl p-6">
-            <h3 class="font-bold text-amber-400 mb-2">راهنمای واریز بانکی / پایا (مخصوص شرکت‌ها)</h3>
-            <p class="text-xs text-slate-300 mb-4">
-                در صورتی که واحد مالی شرکت شما مبلغ <strong>{{ order.payable_amount|intcomma }} تومان</strong> را طبق پیش‌فاکتور رسمی واریز نموده است، تصویر فیش را در کادر زیر بارگذاری کنید:
+    <!-- هشدار انقضای ۲۴ ساعته قیمت ورق -->
+    {% if not order.is_paid and order.is_price_expired %}
+    <div class="bg-red-950/40 border border-red-800 p-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
+        <div class="text-red-200 leading-relaxed">
+            <strong class="font-mono-tech text-red-400">[PRICE LOCK EXPIRED]</strong>
+            مهلت اعتبار ۲۴ ساعته این پیش‌فاکتور به پایان رسیده است. به دلیل نوسانات قیمت ورق در بازار آهن، جهت فعال‌سازی درگاه پرداخت یا بارگذاری فیش بانکی، ابتدا قیمت را به نرخ روز بروزرسانی نمایید.
+        </div>
+        <form method="post" action="{% url 'orders:refresh_price' order.id %}">
+            {% csrf_token %}
+            <button type="submit" class="bg-red-800 hover:bg-red-700 text-white px-4 py-2 font-bold whitespace-nowrap transition">
+                محاسبه مجدد با نرخ روز
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- نوار رهگیری ۵ مرحله‌ای خط تولید سوله شادآباد -->
+    <div class="bg-zinc-900 border border-zinc-800 p-6 space-y-6">
+        <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+            <h2 class="text-sm font-bold text-white">وضعیت لحظه‌ای سفارش در خط تولید و سوله مرکزی متال‌تک</h2>
+            <span class="font-mono-tech text-xs text-amber-500">STAGE {{ order.current_step_number }} OF 5</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-5 border border-zinc-800 divide-y sm:divide-y-0 sm:divide-x sm:divide-x-reverse divide-zinc-800">
+            <div class="p-4 {% if order.current_step_number >= 1 %}bg-zinc-950 border-t-2 border-t-emerald-500{% else %}bg-zinc-950/40 opacity-50{% endif %}">
+                <div class="font-mono-tech text-[10px] {% if order.current_step_number >= 1 %}text-emerald-400{% else %}text-zinc-500{% endif %}">STEP 01</div>
+                <div class="text-xs font-bold text-white mt-1">تایید نقشه و Nesting</div>
+                <div class="text-[11px] text-zinc-500 mt-0.5">چیدمان مهندسی روی شیت</div>
+            </div>
+
+            <div class="p-4 {% if order.current_step_number >= 2 %}bg-zinc-950 border-t-2 border-t-emerald-500{% else %}bg-zinc-950/40 opacity-50{% endif %}">
+                <div class="font-mono-tech text-[10px] {% if order.current_step_number >= 2 %}text-emerald-400{% else %}text-zinc-500{% endif %}">STEP 02</div>
+                <div class="text-xs font-bold text-white mt-1">تامین ورق از سوله</div>
+                <div class="text-[11px] text-zinc-500 mt-0.5">ارسال ورق از انبار شادآباد</div>
+            </div>
+
+            <div class="p-4 {% if order.current_step_number >= 3 %}bg-zinc-950 border-t-2 border-t-emerald-500{% else %}bg-zinc-950/40 opacity-50{% endif %}">
+                <div class="font-mono-tech text-[10px] {% if order.current_step_number >= 3 %}text-emerald-400{% else %}text-zinc-500{% endif %}">STEP 03</div>
+                <div class="text-xs font-bold text-white mt-1">برش لیزر و خم CNC</div>
+                <div class="text-[11px] text-zinc-500 mt-0.5">اجرا در خطوط ماشین‌کاری</div>
+            </div>
+
+            <div class="p-4 {% if order.current_step_number >= 4 %}bg-zinc-950 border-t-2 border-t-emerald-500{% else %}bg-zinc-950/40 opacity-50{% endif %}">
+                <div class="font-mono-tech text-[10px] {% if order.current_step_number >= 4 %}text-emerald-400{% else %}text-zinc-500{% endif %}">STEP 04</div>
+                <div class="text-xs font-bold text-white mt-1">کنترل کیفیت (QC)</div>
+                <div class="text-[11px] text-zinc-500 mt-0.5">بازرسی ابعادی قطعه اول</div>
+            </div>
+
+            <div class="p-4 {% if order.current_step_number >= 5 %}bg-zinc-950 border-t-2 border-t-emerald-500{% else %}bg-zinc-950/40 opacity-50{% endif %}">
+                <div class="font-mono-tech text-[10px] {% if order.current_step_number >= 5 %}text-emerald-400{% else %}text-zinc-500{% endif %}">STEP 05</div>
+                <div class="text-xs font-bold text-white mt-1">آماده بارگیری و ارسال</div>
+                <div class="text-[11px] text-zinc-500 mt-0.5">پالت‌بندی در سوله مرکزی</div>
+            </div>
+        </div>
+
+        <!-- گزارش تصویری کنترل کیفیت قطعه اول (First-Article Inspection) -->
+        {% if order.qc_first_article_image %}
+        <div class="bg-zinc-950 border border-zinc-700 p-4 flex flex-col sm:flex-row gap-5 items-center">
+            <img src="{{ order.qc_first_article_image.url }}" alt="QC First Article" class="w-48 h-36 object-cover border border-zinc-800">
+            <div class="space-y-1.5">
+                <div class="font-mono-tech text-[10px] text-emerald-400 font-bold">FIRST-ARTICLE INSPECTION PASSED // QC REPORT</div>
+                <h3 class="text-sm font-bold text-white">مستندات کنترل ابعادی قطعه اول در سوله شادآباد</h3>
+                <p class="text-xs text-zinc-400 leading-relaxed">
+                    {{ order.qc_engineer_note|default:"ابعاد برش لیزر و زوایای خم قطعه اول با کولیس دیجیتال و گونیا کنترل گردید و منطبق بر تلرانس استاندارد ISO 2768-m تایید شد." }}
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- جدول اقلام قفل‌شده در سفارش -->
+    <div class="bg-zinc-900 border border-zinc-800 p-6 space-y-4">
+        <div class="flex justify-between items-center">
+            <h2 class="text-sm font-bold text-white">لیست قطعات و مشخصات فنی ثبت‌شده</h2>
+            <span class="font-mono-tech text-xs text-zinc-500">{{ order.items.count }} ITEMS</span>
+        </div>
+
+        <div class="border border-zinc-800 overflow-x-auto">
+            <table class="w-full text-right text-xs border-collapse">
+                <thead>
+                    <tr class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
+                        <th class="py-2.5 px-4">ردیف</th>
+                        <th class="py-2.5 px-4">شرح فایل / قطعه</th>
+                        <th class="py-2.5 px-4">متریال و ضخامت</th>
+                        <th class="py-2.5 px-4">ابعاد باکس (mm)</th>
+                        <th class="py-2.5 px-4">ضرب خم</th>
+                        <th class="py-2.5 px-4">تیراژ</th>
+                        <th class="py-2.5 px-4">فی واحد (تومان)</th>
+                        <th class="py-2.5 px-4">جمع ردیف (تومان)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-zinc-800 font-mono-tech">
+                    {% for item in order.items.all %}
+                    <tr>
+                        <td class="py-2.5 px-4 text-zinc-500">{{ forloop.counter }}</td>
+                        <td class="py-2.5 px-4 font-sans font-bold text-white">{{ item.file_name }}</td>
+                        <td class="py-2.5 px-4 font-sans text-zinc-300">{{ item.material_title }}</td>
+                        <td class="py-2.5 px-4 text-zinc-300" dir="ltr">{{ item.dimensions_str }}</td>
+                        <td class="py-2.5 px-4 text-zinc-400">{{ item.bend_count }}</td>
+                        <td class="py-2.5 px-4 text-amber-500 font-bold">{{ item.quantity }}</td>
+                        <td class="py-2.5 px-4 text-zinc-300">{{ item.unit_price|intcomma }}</td>
+                        <td class="py-2.5 px-4 text-white font-bold">{{ item.total_price|intcomma }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ثبت فیش واریز بانکی پایا / ساتنا (مخصوص واحد مالی شرکت‌ها) -->
+    {% if not order.is_paid and not order.is_price_expired %}
+    <div class="bg-zinc-900 border border-zinc-800 p-6 space-y-4">
+        <div class="border-b border-zinc-800 pb-3">
+            <div class="font-mono-tech text-[11px] text-amber-500">BANK TRANSFER VERIFICATION</div>
+            <h3 class="text-sm font-bold text-white mt-0.5">ثبت تصویر فیش واریزی بانکی (پایا / ساتنا)</h3>
+            <p class="text-xs text-zinc-400 mt-1">
+                چنانچه مبلغ <strong class="text-white font-mono-tech">{{ order.payable_amount|intcomma }} تومان</strong> را به شماره شبای مندرج در پیش‌فاکتور رسمی واریز نموده‌اید، رسید بانکی را در این بخش بارگذاری کنید.
             </p>
-            <form method="post" action="{% url 'orders:upload_receipt' order.id %}" enctype="multipart/form-data" class="flex flex-wrap gap-3 items-center">
-                {% csrf_token %}
-                <input type="text" name="payment_ref_id" placeholder="شماره پیگیری فیش / پایا" class="bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-sm">
-                <input type="file" name="receipt_file" required class="text-xs text-slate-300 bg-slate-950 border border-slate-700 rounded-xl p-1.5">
-                <button type="submit" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-5 py-2 rounded-xl text-sm">ثبت فیش واریزی</button>
-            </form>
+        </div>
+
+        {% if order.receipt_file %}
+        <div class="bg-zinc-950 border border-amber-500/40 p-3 text-xs text-amber-300">
+            تصویر فیش واریزی شما با شماره پیگیری <strong class="font-mono-tech">{{ order.payment_ref_id|default:"-" }}</strong> ثبت شده و در انتظار تایید واحد مالی است.
         </div>
         {% endif %}
 
+        <form method="post" action="{% url 'orders:upload_receipt' order.id %}" enctype="multipart/form-data" class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+            {% csrf_token %}
+            <div>
+                <label class="block text-[11px] text-zinc-400 mb-1">شماره پیگیری تراکنش / فیش پایا</label>
+                <input type="text" name="payment_ref_id" value="{{ order.payment_ref_id }}" dir="ltr" required
+                       class="w-full bg-zinc-950 border border-zinc-700 px-3 py-2 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-[11px] text-zinc-400 mb-1">تصویر فیش واریزی (JPG / PDF) *</label>
+                <input type="file" name="receipt_file" required
+                       class="w-full text-xs text-zinc-300 file:ml-3 file:py-1.5 file:px-3 file:border-0 file:bg-zinc-800 file:text-white bg-zinc-950 border border-zinc-700 p-1">
+            </div>
+            <div>
+                <button type="submit" class="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-bold py-2.5 text-xs transition">
+                    بارگذاری رسید و اعلام به واحد مالی
+                </button>
+            </div>
+        </form>
     </div>
-</body>
-</html>
+    {% endif %}
+
+</div>
+{% endblock %}

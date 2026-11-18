@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from .models import CustomRFQ, Quote, QuoteItem
 from .services.dxf_analyzer import analyze_dxf_file
-
+from orders.notifications import normalize_and_validate_phone, notify_custom_rfq
 # دیتابیس صفحات فرود سئو (SEO Landing Pages) برای کلمات کلیدی اصلی گوگل
 SEO_SERVICES = {
     "laser-cutting": {
@@ -162,6 +162,8 @@ def quote_workspace_view(request):
         },
     )
 
+MAX_DXF_FILE_SIZE = 10 * 1024 * 1024  # حداکثر ۱۰ مگابایت
+
 
 @require_POST
 def upload_dxf_view(request):
@@ -170,13 +172,24 @@ def upload_dxf_view(request):
 
     if not uploaded_file or not uploaded_file.name.lower().endswith(".dxf"):
         messages.error(
-            request, "خطای فرمت: فقط فایل مهندسی استاندارد با پسوند .DXF قابل پردازش خودکار است."
+            request,
+            "خطای فرمت: فقط فایل مهندسی استاندارد با پسوند .DXF قابل پردازش خودکار است.",
+        )
+        return redirect("quoting:workspace")
+
+    if uploaded_file.size > MAX_DXF_FILE_SIZE:
+        messages.error(
+            request,
+            "خطای حجم فایل: حداکثر حجم مجاز برای فایل DXF معادل ۱۰ مگابایت است.",
         )
         return redirect("quoting:workspace")
 
     default_thickness = SheetThickness.objects.filter(is_active=True).first()
     if not default_thickness:
-        messages.error(request, "خطای سیستم: جدول تعرفه ضخامت ورق در دیتابیس تعریف نشده است.")
+        messages.error(
+            request,
+            "خطای سیستم: جدول تعرفه ضخامت ورق در دیتابیس تعریف نشده است.",
+        )
         return redirect("quoting:workspace")
 
     item = QuoteItem(
@@ -195,17 +208,17 @@ def upload_dxf_view(request):
         messages.error(request, f"خطای هندسه فایل: {analysis.error_message}")
         return redirect("quoting:workspace")
 
-    item.width_mm = analysis.width_mm
-    item.height_mm = analysis.height_mm
-    item.area_mm2 = analysis.area_mm2
-    item.cut_length_m = analysis.cut_length_m
+    item.raw_width = analysis.raw_width
+    item.raw_height = analysis.raw_height
+    item.raw_cut_length = analysis.raw_cut_length
+    item.drawing_unit = analysis.detected_unit
     item.pierce_count = analysis.pierce_count
     item.svg_preview = analysis.svg_preview
     item.save()
 
     messages.success(
         request,
-        f"فایل {item.file_name} پردازش شد. ابعاد باکس: {item.width_mm}x{item.height_mm} میلی‌متر | مسیر برش: {item.cut_length_m} متر.",
+        f"فایل {item.file_name} پردازش شد. ابعاد باکس: {item.width_mm}×{item.height_mm} میلی‌متر | مسیر برش: {item.cut_length_m} متر.",
     )
     return redirect("quoting:workspace")
 
@@ -216,6 +229,7 @@ def update_item_htmx(request, item_id):
     item = get_object_or_404(QuoteItem, id=item_id, quote=quote)
 
     thickness_id = request.POST.get("sheet_thickness")
+    drawing_unit = request.POST.get("drawing_unit")
     quantity = request.POST.get("quantity", 1)
     bend_count = request.POST.get("bend_count", 0)
 
@@ -224,9 +238,12 @@ def update_item_htmx(request, item_id):
             SheetThickness, id=thickness_id, is_active=True
         )
 
+    if drawing_unit in ("mm", "cm", "inch", "m"):
+        item.drawing_unit = drawing_unit
+
     try:
-        item.quantity = max(1, int(quantity))
-        item.bend_count = max(0, int(bend_count))
+        item.quantity = max(1, min(100000, int(quantity)))
+        item.bend_count = max(0, min(100, int(bend_count)))
     except ValueError:
         pass
 
@@ -244,7 +261,6 @@ def update_item_htmx(request, item_id):
         },
     )
 
-
 @require_POST
 def delete_item_view(request, item_id):
     quote = get_or_create_quote(request)
@@ -255,20 +271,33 @@ def delete_item_view(request, item_id):
 
 @require_POST
 def submit_custom_rfq_view(request):
-    name = request.POST.get("customer_name")
-    phone = request.POST.get("customer_phone")
-    desc = request.POST.get("description")
+    name = (request.POST.get("customer_name") or "").strip()
+    raw_phone = request.POST.get("customer_phone") or ""
+    desc = (request.POST.get("description") or "").strip()
     need_design = request.POST.get("need_design") == "on"
     attachment = request.FILES.get("attachment")
 
-    if name and phone and attachment:
-        CustomRFQ.objects.create(
+    is_valid_phone, clean_phone = normalize_and_validate_phone(raw_phone)
+    if not is_valid_phone:
+        messages.error(
+            request,
+            "خطای شماره تماس: لطفاً یک شماره موبایل معتبر ۱۱ رقمی (مانند 09123456789) وارد نمایید.",
+        )
+        return redirect("quoting:workspace")
+
+    if name and attachment:
+        if attachment.size > MAX_DXF_FILE_SIZE:
+            messages.error(request, "حداکثر حجم مجاز فایل پیوست ۱۰ مگابایت است.")
+            return redirect("quoting:workspace")
+
+        rfq = CustomRFQ.objects.create(
             customer_name=name,
-            customer_phone=phone,
+            customer_phone=clean_phone,
             description=desc,
             need_design=need_design,
             attachment=attachment,
         )
+        notify_custom_rfq(rfq)
         messages.success(
             request,
             "درخواست استعلام مهندسی ثبت شد. پیش‌فاکتور رسمی پس از بررسی نقشه توسط واحد فنی به شماره همراه شما ارسال می‌گردد.",

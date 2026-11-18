@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}پیگیری وضعیت تولید و پیش‌فاکتور | متال‌تک{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto px-4 py-16">
+    <div class="bg-zinc-900 border border-zinc-800 p-6 sm:p-8 space-y-6">
+        <div class="border-b border-zinc-800 pb-4">
+            <div class="font-mono-tech text-[11px] text-amber-500">ORDER TELEMETRY & INVOICE LOOKUP</div>
+            <h1 class="text-xl font-black text-white mt-1">پیگیری وضعیت تولید و دریافت پیش‌فاکتور</h1>
+            <p class="text-xs text-zinc-400 mt-1 leading-relaxed">
+                شماره پیش‌فاکتور (مانند <span class="font-mono-tech text-zinc-200">MT-123456</span>) و شماره موبایل ثبت‌شده هنگام سفارش را وارد نمایید.
+            </p>
+        </div>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs text-zinc-400 mb-1.5">شماره سفارش / پیش‌فاکتور *</label>
+                <input type="text" name="order_number" placeholder="MT-102030" required dir="ltr"
+                       class="w-full bg-zinc-950 border border-zinc-700 px-3.5 py-2.5 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs text-zinc-400 mb-1.5">شماره همراه ثبت‌شده در سفارش *</label>
+                <input type="text" name="customer_phone" placeholder="09123456789" required dir="ltr"
+                       class="w-full bg-zinc-950 border border-zinc-700 px-3.5 py-2.5 text-xs text-white font-mono-tech focus:border-amber-500 outline-none">
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 text-xs transition">
+                    مشاهده وضعیت خط تولید و پیش‌فاکتور
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

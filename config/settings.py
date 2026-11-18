@@ -134,3 +134,16 @@ MEDIA_ROOT = BASE_DIR / "media"
 # تنظیمات درگاه پرداخت زرین‌پال
 ZARINPAL_MERCHANT_ID = "00000000-0000-0000-0000-000000000000"  # کد تستی ۳۶ کاراکتری
 ZARINPAL_SANDBOX = True  # وقتی نماد اعتماد و کد واقعی گرفتید این را False کنید
+# مشخصات حقوقی و بانکی جهت درج در پیش‌فاکتور رسمی (پایا / ساتنا)
+COMPANY_LEGAL_NAME = "سامانه تولید صنعتی متال‌تک (MetalTech.ir)"
+COMPANY_BANK_NAME = "بانک ملت - شعبه بازار آهن شادآباد"
+COMPANY_ACCOUNT_OWNER = "شرکت مهندسی و تامین متال‌تک"
+COMPANY_ACCOUNT_NUMBER = "4587963214"
+COMPANY_IBAN = "IR450120000000004587963214"
+
+# مدت اعتبار پیش‌فاکتور بر حسب ساعت (محافظت در برابر نوسان روزانه قیمت ورق)
+ORDER_PRICE_VALIDITY_HOURS = 24
+
+# تنظیمات بات تلگرام یا پیام‌رسان بله (در صورت نیاز مقادیر واقعی را قرار دهید)
+TELEGRAM_BOT_TOKEN = ""
+TELEGRAM_ADMIN_CHAT_ID = ""

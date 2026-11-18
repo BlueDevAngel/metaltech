@@ -3,78 +3,129 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>پیش‌فاکتور رسمی {{ order.order_number }} - MetalTech.ir</title>
+    <title>پیش‌فاکتور رسمی {{ order.order_number }} | METALTECH.IR</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Vazirmatn', sans-serif; }
-        @media print { .no-print { display: none; } }
+        .font-mono-tech { font-family: 'JetBrains Mono', 'Vazirmatn', monospace; font-variant-numeric: tabular-nums; }
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
-<body class="bg-white text-slate-900 p-8 max-w-4xl mx-auto">
-    <div class="no-print mb-6 flex justify-between bg-slate-100 p-4 rounded-xl border">
-        <span class="text-sm font-bold">برای دانلود به صورت PDF یا چاپ، دکمه روبرو را بزنید:</span>
-        <button onclick="window.print()" class="bg-slate-900 text-white px-5 py-2 rounded-lg text-sm font-bold">🖨️ چاپ / ذخیره PDF</button>
+<body class="bg-white text-zinc-900 p-6 sm:p-10 max-w-4xl mx-auto">
+
+    <!-- نوار ابزار چاپ (در نسخه چاپی مخفی می‌شود) -->
+    <div class="no-print mb-6 flex justify-between items-center bg-zinc-100 p-4 border border-zinc-300">
+        <div class="text-xs font-medium text-zinc-700">
+            پیش‌فاکتور رسمی سیستم متال‌تک // جهت ذخیره به صورت فایل PDF یا چاپ کاغذی دکمه مقابل را انتخاب کنید.
+        </div>
+        <button onclick="window.print()" class="bg-zinc-900 hover:bg-zinc-800 text-white px-5 py-2 text-xs font-bold transition">
+            چاپ / ذخیره فایل PDF
+        </button>
     </div>
 
-    <div class="border-2 border-slate-900 p-6 rounded-lg">
-        <div class="flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-4">
+    <div class="border-2 border-zinc-900 p-6">
+        <!-- سرنسخه صنعتی -->
+        <div class="flex justify-between items-start border-b-2 border-zinc-900 pb-4 mb-4">
             <div>
-                <h1 class="text-2xl font-black">سامانه تولید صنعتی متال‌تک (METALTECH.ir)</h1>
-                <p class="text-xs text-slate-600 mt-1">مرکز تخصصی برش لیزر، خم‌کاری CNC و ساخت قطعات فلزی | سوله مرکزی: بازار آهن شادآباد</p>
+                <div class="text-xs font-mono-tech text-zinc-500">OFFICIAL PROFORMA INVOICE</div>
+                <h1 class="text-xl font-black mt-0.5">{{ bank_info.legal_name }}</h1>
+                <p class="text-xs text-zinc-600 mt-1">
+                    مرکز تولید قراردادی، برش لیزر فایبر و خم‌کاری CNC | سوله مرکزی: تهران، بازار آهن شادآباد
+                </p>
             </div>
-            <div class="text-left text-xs space-y-1">
-                <div><strong>شماره پیش‌فاکتور:</strong> {{ order.order_number }}</div>
-                <div><strong>تاریخ صدور:</strong> {{ order.created_at|date:"Y/m/d" }}</div>
+            <div class="text-left text-xs space-y-1 font-mono-tech border border-zinc-900 p-2.5 bg-zinc-50">
+                <div><span class="text-zinc-500">INVOICE NO:</span> <strong>{{ order.order_number }}</strong></div>
+                <div><span class="text-zinc-500">ISSUE DATE:</span> <strong>{{ order.price_locked_at|date:"Y/m/d - H:i" }}</strong></div>
+                <div><span class="text-zinc-500">VALID UNTIL:</span> <strong>{{ order.price_expires_at|date:"Y/m/d - H:i" }}</strong></div>
             </div>
         </div>
 
-        <div class="bg-slate-50 border border-slate-300 p-3 rounded mb-4 text-xs grid grid-cols-2 gap-2">
-            <div><strong>خریدار / شرکت:</strong> {{ order.company_name|default:order.customer_name }}</div>
-            <div><strong>شناسه ملی / اقتصادی:</strong> {{ order.national_id|default:"-" }}</div>
-            <div><strong>نام رابط و تلفن:</strong> {{ order.customer_name }} ({{ order.customer_phone }})</div>
-            <div><strong>نشانی تحویل:</strong> {{ order.shipping_address }}</div>
+        <!-- مشخصات خریدار -->
+        <div class="bg-zinc-50 border border-zinc-400 p-3 mb-4 text-xs grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div><strong>خریدار / شخصیت حقوقی:</strong> {{ order.company_name|default:order.customer_name }}</div>
+            <div><strong>شناسه ملی / کد اقتصادی:</strong> <span class="font-mono-tech">{{ order.national_id|default:"-" }}</span></div>
+            <div><strong>نام نماینده و شماره تماس:</strong> {{ order.customer_name }} (<span class="font-mono-tech">{{ order.customer_phone }}</span>)</div>
+            <div><strong>وضعیت تسویه:</strong> {% if order.is_paid %}تسویه شده (کد رهگیری: {{ order.payment_ref_id }}){% else %}در انتظار پرداخت{% endif %}</div>
+            <div class="sm:col-span-2"><strong>نشانی محل تحویل بار:</strong> {{ order.shipping_address }}</div>
         </div>
 
-        <table class="w-full border-collapse border border-slate-900 text-xs text-center mb-4">
-            <thead class="bg-slate-200 font-bold">
+        <!-- جدول اقلام مهندسی -->
+        <table class="w-full border-collapse border border-zinc-900 text-xs text-center mb-4">
+            <thead class="bg-zinc-200 font-bold">
                 <tr>
-                    <th class="border border-slate-900 p-2">ردیف</th>
-                    <th class="border border-slate-900 p-2">نام نقشه / قطعه</th>
-                    <th class="border border-slate-900 p-2">جنس و ضخامت ورق</th>
-                    <th class="border border-slate-900 p-2">ابعاد (mm)</th>
-                    <th class="border border-slate-900 p-2">تعداد خم</th>
-                    <th class="border border-slate-900 p-2">تعداد</th>
-                    <th class="border border-slate-900 p-2">قیمت واحد (تومان)</th>
-                    <th class="border border-slate-900 p-2">مبلغ کل (تومان)</th>
+                    <th class="border border-zinc-900 p-2">ردیف</th>
+                    <th class="border border-zinc-900 p-2 text-right">شرح نقشه / قطعه مهندسی</th>
+                    <th class="border border-zinc-900 p-2">جنس و ضخامت ورق</th>
+                    <th class="border border-zinc-900 p-2">ابعاد باکس (mm)</th>
+                    <th class="border border-zinc-900 p-2">ضرب خم</th>
+                    <th class="border border-zinc-900 p-2">تعداد</th>
+                    <th class="border border-zinc-900 p-2">فی واحد (تومان)</th>
+                    <th class="border border-zinc-900 p-2">مبلغ کل (تومان)</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="font-mono-tech">
                 {% for item in order.items.all %}
                 <tr>
-                    <td class="border border-slate-900 p-2">{{ forloop.counter }}</td>
-                    <td class="border border-slate-900 p-2 font-bold">{{ item.file_name }}</td>
-                    <td class="border border-slate-900 p-2">{{ item.material_title }}</td>
-                    <td class="border border-slate-900 p-2">{{ item.dimensions_str }}</td>
-                    <td class="border border-slate-900 p-2">{{ item.bend_count }}</td>
-                    <td class="border border-slate-900 p-2 font-bold">{{ item.quantity }}</td>
-                    <td class="border border-slate-900 p-2">{{ item.unit_price|intcomma }}</td>
-                    <td class="border border-slate-900 p-2 font-bold">{{ item.total_price|intcomma }}</td>
+                    <td class="border border-zinc-900 p-2">{{ forloop.counter }}</td>
+                    <td class="border border-zinc-900 p-2 font-sans font-bold text-right">{{ item.file_name }}</td>
+                    <td class="border border-zinc-900 p-2 font-sans">{{ item.material_title }}</td>
+                    <td class="border border-zinc-900 p-2" dir="ltr">{{ item.dimensions_str }}</td>
+                    <td class="border border-zinc-900 p-2">{{ item.bend_count }}</td>
+                    <td class="border border-zinc-900 p-2 font-bold">{{ item.quantity }}</td>
+                    <td class="border border-zinc-900 p-2">{{ item.unit_price|intcomma }}</td>
+                    <td class="border border-zinc-900 p-2 font-bold">{{ item.total_price|intcomma }}</td>
                 </tr>
                 {% endfor %}
+                {% if order.min_fee_supplement > 0 %}
+                <tr class="bg-zinc-50">
+                    <td class="border border-zinc-900 p-2">-</td>
+                    <td colspan="6" class="border border-zinc-900 p-2 font-sans text-right">
+                        مابه‌التفاوت حداقل اجرت راه‌اندازی خط برش لیزر و تنظیم دستگاه (Setup Fee)
+                    </td>
+                    <td class="border border-zinc-900 p-2 font-bold">{{ order.min_fee_supplement|intcomma }}</td>
+                </tr>
+                {% endif %}
             </tbody>
         </table>
 
-        <div class="flex justify-between items-start text-xs pt-2">
-            <div class="space-y-1 text-slate-700">
-                <p><strong>شرایط و توضیحات:</strong></p>
-                <p>۱. اعتبار این پیش‌فاکتور به دلیل نوسانات قیمت ورق در بازار آهن ۲۴ ساعت می‌باشد.</p>
-                <p>۲. کلیه قطعات پس از تایید کنترل کیفیت (QC) در سوله مرکزی متال‌تک تحویل می‌گردند.</p>
+        <!-- جمع کل و مشخصات حساب بانکی شرکت -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start text-xs pt-2">
+            <div class="md:col-span-7 space-y-3">
+                <div class="border border-zinc-900 p-3 bg-zinc-50 space-y-1.5">
+                    <div class="font-bold text-zinc-900 border-b border-zinc-300 pb-1">
+                        مشخصات حساب بانکی جهت واریز وجه (پایا / ساتنا):
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 pt-1">
+                        <div><strong>نام بانک:</strong> {{ bank_info.bank_name }}</div>
+                        <div><strong>صاحب حساب:</strong> {{ bank_info.account_owner }}</div>
+                        <div><strong>شماره حساب:</strong> <span class="font-mono-tech font-bold">{{ bank_info.account_number }}</span></div>
+                        <div><strong>شماره شبا:</strong> <span class="font-mono-tech font-bold" dir="ltr">{{ bank_info.iban }}</span></div>
+                    </div>
+                </div>
+
+                <div class="text-[11px] text-zinc-700 space-y-1 leading-relaxed">
+                    <div><strong>شرایط و ضوابط اجرایی:</strong></div>
+                    <div>۱. به دلیل نوسانات لحظه‌ای قیمت ورق در بازار آهن، اعتبار قیمت این پیش‌فاکتور دقیقاً ۲۴ ساعت از زمان صدور می‌باشد.</div>
+                    <div>۲. پس از واریز بانکی، تصویر فیش یا کد پیگیری پایا را در پنل رهگیری سفارش به نشانی <strong>metaltech.ir</strong> ثبت نمایید.</div>
+                    <div>۳. کلیه قطعات پس از تایید کنترل کیفیت قطعه اول (First-Article QC) در سوله مرکزی شادآباد تحویل می‌گردند.</div>
+                </div>
             </div>
-            <div class="w-64 border border-slate-900 rounded p-3 space-y-2 bg-slate-50">
-                <div class="flex justify-between"><span>جمع خالص:</span><strong>{{ order.subtotal_price|intcomma }} تومان</strong></div>
-                <div class="flex justify-between"><span>ارزش افزوده (۱۰٪):</span><strong>{{ order.tax_amount|intcomma }} تومان</strong></div>
-                <div class="flex justify-between border-t border-slate-400 pt-2 text-sm"><span>قابل پرداخت:</span><strong class="font-black">{{ order.payable_amount|intcomma }} تومان</strong></div>
+
+            <div class="md:col-span-5 border-2 border-zinc-900 p-3.5 space-y-2.5 bg-zinc-50 font-mono-tech">
+                <div class="flex justify-between">
+                    <span class="font-sans">جمع خالص سفارش:</span>
+                    <strong>{{ order.subtotal_price|intcomma }} تومان</strong>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-sans">مالیات ارزش افزوده (۱۰٪):</span>
+                    <strong>{{ order.tax_amount|intcomma }} تومان</strong>
+                </div>
+                <div class="flex justify-between border-t-2 border-zinc-900 pt-2.5 text-sm">
+                    <span class="font-sans font-black">مبلغ قابل پرداخت:</span>
+                    <strong class="font-black">{{ order.payable_amount|intcomma }} تومان</strong>
+                </div>
             </div>
         </div>
     </div>

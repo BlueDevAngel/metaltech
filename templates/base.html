@@ -93,6 +93,9 @@
             </div>
 
             <div class="flex items-center gap-3">
+                <a href="{% url 'orders:track' %}" class="border border-zinc-700 hover:border-zinc-500 bg-zinc-900 text-zinc-200 font-bold text-xs px-3.5 py-2.5 transition">
+                    پیگیری سفارش
+                </a>
                 <a href="{% url 'quoting:workspace' %}" class="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs px-4 py-2.5 transition flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="square" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m-4-4l4-4 4 4"/>

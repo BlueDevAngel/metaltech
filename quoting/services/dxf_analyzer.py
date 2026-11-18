@@ -1,68 +1,96 @@
 from dataclasses import dataclass
-import io
-import math
-from typing import Optional
-import ezdxf
-from ezdxf import bbox
-from ezdxf.addons.drawing import Frontend, RenderContext
-from ezdxf.addons.drawing.config import Configuration
-from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
 from ezdxf.path import make_path
+import ezdxf
 import matplotlib
-import matplotlib.pyplot as plt
 from shapely.geometry import LineString, MultiLineString
-from shapely.ops import linemerge, polygonize, unary_union
+from shapely.ops import linemerge, snap, unary_union
 
-# جلوگیری از باز شدن پنجره گرافیکی در سرور
 matplotlib.use("Agg")
+
+# حداکثر تعداد خطوط مجاز در یک فایل برای جلوگیری از قفل شدن سرور (DoS Protection)
+MAX_ENTITIES_LIMIT = 5000
+
+# لایه‌های غیربرشی استاندارد در اتوکد (کادر، اندازه، محور، خطوط مخفی)
+IGNORED_LAYERS = {
+    "DEFPOINTS",
+    "DIM",
+    "DIMENSIONS",
+    "DIMENSION",
+    "TITLE",
+    "TITLEBLOCK",
+    "BORDER",
+    "FRAME",
+    "TEXT",
+    "ANNOTATION",
+    "HATCH",
+    "CENTER",
+    "CENTERLINE",
+    "HIDDEN",
+    "CONSTRUCTION",
+    "AXIS",
+    "VIEWPORT",
+}
+
+# خطوط خط‌چین و محور که نباید توسط لیزر بریده شوند
+IGNORED_LINETYPES = {
+    "DASHED",
+    "CENTER",
+    "HIDDEN",
+    "PHANTOM",
+    "DOT",
+    "DASHDOT",
+    "BORDER",
+}
+
+# نگاشت کد واحد هدر اتوکد ($INSUNITS) به واحدهای استاندارد سیستم ما
+INSUNITS_TO_UNIT_CODE = {
+    0: "mm",    # Unitless -> پیش‌فرض اولیه میلی‌متر
+    1: "inch",  # Inches
+    4: "mm",    # Millimeters
+    5: "cm",    # Centimeters
+    6: "m",     # Meters
+}
 
 
 @dataclass
 class DXFAnalysisResult:
     is_valid: bool
     error_message: str = ""
-    width_mm: float = 0.0  # عرض مستطیل دور قطعه (میلی‌متر)
-    height_mm: float = 0.0  # طول مستطیل دور قطعه (میلی‌متر)
-    area_mm2: float = 0.0  # مساحت مستطیل دور قطعه (میلی‌متر مربع)
-    cut_length_mm: float = 0.0  # مجموع طول مسیر برش (میلی‌متر)
-    cut_length_m: float = 0.0  # مجموع طول مسیر برش (متر)
-    pierce_count: int = 0  # تعداد سوراخ‌کاری اولیه (پیرسینگ)
-    svg_preview: str = ""  # کد تصویر پیش‌نمایش SVG
-
-
-# جدول ضرایب تبدیل واحدهای اتوکد ($INSUNITS) به میلی‌متر
-UNIT_TO_MM = {
-    0: 1.0,  # Unitless -> فرض پیش‌فرض در ایران میلی‌متر است
-    1: 25.4,  # Inches
-    2: 304.8,  # Feet
-    4: 1.0,  # Millimeters
-    5: 10.0,  # Centimeters
-    6: 1000.0,  # Meters
-}
+    detected_unit: str = "mm"
+    raw_width: float = 0.0       # عرض خام در مختصات فایل
+    raw_height: float = 0.0      # طول خام در مختصات فایل
+    raw_cut_length: float = 0.0  # طول برش خام در مختصات فایل
+    pierce_count: int = 0        # تعداد پیرسینگ (مسیرهای بسته/مستقل)
+    svg_preview: str = ""        # تصویر وکتور قطعه
 
 
 def analyze_dxf_file(file_path: str) -> DXFAnalysisResult:
-    """فایل DXF را می‌خواند و ابعاد، طول برش، تعداد پیرسینگ و پیش‌نمایش SVG را برمی‌گرداند."""
+    """فایل DXF را با فیلتر کردن کادرها و لایه‌های غیربرشی تحلیل می‌کند."""
     try:
         doc = ezdxf.readfile(file_path)
         msp = doc.modelspace()
     except Exception as e:
         return DXFAnalysisResult(
             is_valid=False,
-            error_message=f"فایل DXF معتبر نیست یا خراب است: {str(e)}",
+            error_message=f"ساختار فایل DXF استاندارد نیست یا آسیب دیده است: {str(e)}",
         )
 
-    # ۱. تشخیص ضریب تبدیل واحد به میلی‌متر
     insunits = doc.header.get("$INSUNITS", 0)
-    scale = UNIT_TO_MM.get(insunits, 1.0)
+    detected_unit = INSUNITS_TO_UNIT_CODE.get(insunits, "mm")
 
     lines = []
+    entity_counter = 0
 
-    # ۲. استخراج تمام المان‌های هندسی (حتی اگر داخل Block باشند)
     def extract_entities(entity_space):
+        nonlocal entity_counter
         for entity in entity_space:
+            entity_counter += 1
+            if entity_counter > MAX_ENTITIES_LIMIT:
+                raise ValueError(
+                    f"تعداد المان‌های نقشه بیش از حد مجاز ({MAX_ENTITIES_LIMIT} خط) است. لطفاً هاشورها و نقشه‌های اضافی را پاک کنید."
+                )
+
             dxftype = entity.dxftype()
-            # نادیده گرفتن متن‌ها، اندازه‌گذاری‌ها و هاشورها (که مسیر برش نیستند)
             if dxftype in (
                 "TEXT",
                 "MTEXT",
@@ -71,81 +99,99 @@ def analyze_dxf_file(file_path: str) -> DXFAnalysisResult:
                 "LEADER",
                 "POINT",
                 "VIEWPORT",
+                "ATTRIB",
+                "ATTDEF",
+                "IMAGE",
+                "SOLID",
             ):
+                continue
+
+            # فیلتر کردن لایه‌های کادر و اندازه‌گذاری
+            layer_name = (entity.dxf.get("layer", "") or "").upper().strip()
+            if layer_name in IGNORED_LAYERS or layer_name.startswith("DIM"):
+                continue
+
+            # فیلتر کردن خطوط راهنما و خط‌چین
+            linetype_name = (entity.dxf.get("linetype", "") or "").upper().strip()
+            if linetype_name in IGNORED_LINETYPES:
                 continue
 
             if dxftype == "INSERT":
                 try:
                     for virtual_entity in entity.virtual_entities():
                         extract_entities([virtual_entity])
+                except ValueError:
+                    raise
                 except Exception:
                     pass
                 continue
 
             try:
                 path = make_path(entity)
-                # تبدیل منحنی‌ها و دایره‌ها به نقاط خطی با دقت بالا (0.5 میلی‌متر)
-                vertices = list(path.flattening(distance=0.5 / scale))
+                vertices = list(path.flattening(distance=0.25))
                 if len(vertices) >= 2:
-                    coords = [(v.x * scale, v.y * scale) for v in vertices]
-                    lines.append(LineString(coords))
+                    coords = [(v.x, v.y) for v in vertices]
+                    line = LineString(coords)
+                    if line.length > 0.001:
+                        lines.append(line)
             except Exception:
                 continue
 
-    extract_entities(msp)
+    try:
+        extract_entities(msp)
+    except ValueError as limit_err:
+        return DXFAnalysisResult(is_valid=False, error_message=str(limit_err))
 
     if not lines:
         return DXFAnalysisResult(
             is_valid=False,
-            error_message="هیچ مسیر برش معتبری (خط، دایره یا پلی‌لاین) در نقشه پیدا نشد.",
+            error_message="هیچ خط برش معتبری در فایل یافت نشد. مطمئن شوید نقشه در لایه DEFPOINTS یا به صورت Block قفل‌شده نباشد.",
         )
 
-    # ۳. حذف خطوط تکراری روی هم افتاده (Overlapping Lines) با Shapely
+    # ۱. حذف خطوط تکراری روی هم افتاده (Overlapping Lines)
     merged_geometry = unary_union(lines)
 
-    # ۴. محاسبه ابعاد مستطیل دور قطعه (Bounding Box)
+    # ۲. محاسبه کادر محاطی خام (Raw Bounding Box)
     minx, miny, maxx, maxy = merged_geometry.bounds
-    width_mm = round(maxx - minx, 2)
-    height_mm = round(maxy - miny, 2)
+    raw_width = round(maxx - minx, 3)
+    raw_height = round(maxy - miny, 3)
 
-    if width_mm <= 0.1 or height_mm <= 0.1:
+    if raw_width <= 0.001 or raw_height <= 0.001:
         return DXFAnalysisResult(
-            is_valid=False, error_message="ابعاد نقشه صفر یا بسیار کوچک است."
+            is_valid=False,
+            error_message="ابعاد هندسی استخراج‌شده صفر است (نقشه دوبعدی معتبر نیست).",
         )
 
-    # اگر طراح به اشتباه نقشه را با واحد متر کشیده اما هدر را Unitless گذاشته باشد (مثلا قطعه 0.5 میلی‌متری!)
-    if width_mm < 5.0 and height_mm < 5.0 and insunits == 0:
-        # هشدار یا اصلاح خودکار مقیاس در صورت نیاز
-        pass
+    # تشخیص هوشمند واحد: اگر فایل Unitless است و ابعاد زیر 15 واحد است، احتمالاً به سانتی‌متر کشیده شده
+    if insunits == 0 and max(raw_width, raw_height) < 15.0:
+        detected_unit = "cm"
 
-    area_mm2 = round(width_mm * height_mm, 2)
+    # ۳. طول کل مسیر برش در واحد خام فایل
+    raw_cut_length = round(merged_geometry.length, 3)
 
-    # ۵. محاسبه دقیق طول مسیر برش
-    cut_length_mm = round(merged_geometry.length, 2)
-    cut_length_m = round(cut_length_mm / 1000.0, 4)
+    # ۴. شمارش دقیق پیرسینگ با جوش دادن درزهای ریز (Snap Tolerance)
+    snap_tol = max(raw_width, raw_height) * 0.0005  # تلرانس نسبی (حدود 0.1 میلی‌متر)
+    pierce_count = _estimate_pierce_count(merged_geometry, snap_tol)
 
-    # ۶. محاسبه تعداد پیرسینگ (تعداد حلقه‌های بسته + مسیرهای باز مجزا)
-    pierce_count = _estimate_pierce_count(merged_geometry)
-
-    # ۷. ساخت پیش‌نمایش وکتور (SVG)
+    # ۵. تولید پیش‌نمایش وکتور مهندسی (SVG)
     svg_preview = _generate_svg_preview(merged_geometry, minx, miny, maxx, maxy)
 
     return DXFAnalysisResult(
         is_valid=True,
-        width_mm=width_mm,
-        height_mm=height_mm,
-        area_mm2=area_mm2,
-        cut_length_mm=cut_length_mm,
-        cut_length_m=cut_length_m,
+        detected_unit=detected_unit,
+        raw_width=raw_width,
+        raw_height=raw_height,
+        raw_cut_length=raw_cut_length,
         pierce_count=pierce_count,
         svg_preview=svg_preview,
     )
 
 
-def _estimate_pierce_count(geometry) -> int:
-    """تخمین تعداد سوراخ‌کاری اولیه لیزر (هر کانتور بسته یا زنجیره مستقل = ۱ پیرسینگ)"""
+def _estimate_pierce_count(geometry, tolerance: float = 0.05) -> int:
+    """با استفاده از Snap درزهای ریز بین خطوط را می‌بندد تا تعداد واقعی کانتورها شمرده شود."""
     try:
-        merged_lines = linemerge(geometry)
+        snapped_geom = snap(geometry, geometry, tolerance)
+        merged_lines = linemerge(snapped_geom)
         if isinstance(merged_lines, LineString):
             return 1
         elif isinstance(merged_lines, MultiLineString):
@@ -158,16 +204,13 @@ def _estimate_pierce_count(geometry) -> int:
 def _generate_svg_preview(
     geometry, minx: float, miny: float, maxx: float, maxy: float
 ) -> str:
-    """تولید کد SVG تمیز و سبک مستقیم از روی هندسه بدون حاشیه‌های اضافی"""
     width = maxx - minx
     height = maxy - miny
-    padding = max(width, height) * 0.08 or 10.0
+    padding = max(width, height) * 0.08 or 1.0
 
     vb_minx = minx - padding
-    vb_miny = miny - padding
     vb_width = width + (padding * 2)
     vb_height = height + (padding * 2)
-
     stroke_width = max(vb_width, vb_height) * 0.008
 
     paths = []
@@ -177,21 +220,19 @@ def _generate_svg_preview(
         if hasattr(geom, "coords"):
             coords = list(geom.coords)
             if len(coords) >= 2:
-                # در SVG محور Y از بالا به پایین است، پس Y را قرینه می‌کنیم تا قطعه برعکس نشود
-                d_parts = [f"M {coords[0][0]:.2f} {-coords[0][1]:.2f}"]
+                d_parts = [f"M {coords[0][0]:.3f} {-coords[0][1]:.3f}"]
                 for x, y in coords[1:]:
-                    d_parts.append(f"L {x:.2f} {-y:.2f}")
+                    d_parts.append(f"L {x:.3f} {-y:.3f}")
                 paths.append(" ".join(d_parts))
 
-    svg_ViewBox = f"{vb_minx:.2f} {-(maxy + padding):.2f} {vb_width:.2f} {vb_height:.2f}"
+    svg_viewbox = f"{vb_minx:.3f} {-(maxy + padding):.3f} {vb_width:.3f} {vb_height:.3f}"
     path_elements = "\n".join(
         [
-            f'<path d="{p}" fill="none" stroke="#38bdf8" stroke-width="{stroke_width:.2f}" stroke-linecap="round" stroke-linejoin="round"/>'
+            f'<path d="{p}" fill="none" stroke="#f59e0b" stroke-width="{stroke_width:.3f}" stroke-linecap="round" stroke-linejoin="round"/>'
             for p in paths
         ]
     )
 
-    svg_code = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{svg_ViewBox}" class="w-full h-full bg-zinc-950 border border-zinc-800 p-2">
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="{svg_viewbox}" class="w-full h-full bg-zinc-950 border border-zinc-800 p-2">
         {path_elements}
-    </svg>'''
-    return svg_code
+    </svg>"""

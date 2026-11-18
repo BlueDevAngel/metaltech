@@ -92,7 +92,7 @@ class JobAssignmentAdmin(admin.ModelAdmin):
     def work_order_link(self, obj):
         url = reverse("workshops:work_order_sheet", args=[obj.id])
         return format_html(
-            '<a class="button" href="{}" target="_blank" style="background:#0284c7; color:white; padding:4px 8px; border-radius:4px;">🖨️ برگه کارگاه</a>',
+            '<a class="button" href="{}" target="_blank" style="background:#0284c7; color:white; padding:4px 8px; border-radius:4px;"> برگه کارگاه</a>',
             url,
         )
 
